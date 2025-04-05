@@ -12,7 +12,7 @@ function generateAccount(email, password) {
 module.exports = {
 	config: {
 		name: "fbaccount",
-		aliases: ["fbac", "fb", "fb"],
+		aliases: ["fbac", "fb"],
 		author:"?/zed",// Convert By Goatbot Zed
 		 role: 2,
 		shortDescription: " ",
