@@ -14,7 +14,7 @@ const baseApiUrl = async () => {
   role: 0,
   category: "media",
   description: "convert image/video into Imgur link",
-  category: "tools",
+  category: "tool",
   usages: "reply [image, video]",
 }),
   (module.exports.onStart = async function ({ api, event }) {
