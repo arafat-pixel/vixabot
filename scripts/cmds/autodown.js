@@ -6,7 +6,7 @@ const dApi = async () => {
 };
 
 module.exports.config = {
-  name: "downloadv",
+  name: "autodown",
   aliases: ["dn", "aon", "aoff"],  // Add aliases here
   version: "2.0",
   author: "Nur Hamim",
