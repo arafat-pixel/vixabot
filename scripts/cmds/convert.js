@@ -11,7 +11,7 @@ module.exports = {
     description: {
       en: "Reply to a video"
     },
-    category: "Tools",
+    category: "Tool",
     guide: {
       en: "{p}{n}"
     },
