@@ -1,7 +1,7 @@
 const axios = require('axios');
 module.exports = {
 	config: {
-		name: "coinflip",
+		name: "toss",
 		aliases: ["cf"],
 		version: "1.0",
 		author: "Loid Butter",
