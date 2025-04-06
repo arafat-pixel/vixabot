@@ -3,7 +3,7 @@ if (!global.client.busyList)
 
 module.exports = {
 	config: {
-		name: "busy",
+		name: "DND",
 		version: "1.6",
 		author: "NTKhang",
 		countDown: 5,
