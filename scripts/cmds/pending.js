@@ -6,12 +6,12 @@ module.exports = {
     name: "pending",
     aliases: ["pen", "pend", "pe"],
     version: "1.6.9",
-    author: "♡ Nazrul ♡",
-    countDown: 2,
-    role: 1,
+    author: "𝗡𝘂𝗿",
+    countDown: 5,
+    role: 2,
     shortDescription: "handle pending requests",
     longDescription: "Approve orreject pending users or group requests",
-    category: "group",
+    category: "admin",
   },
 
   onReply: async function ({ message, api, event, Reply }) {
@@ -48,12 +48,12 @@ module.exports = {
 
       try {
         await api.sendMessage(
-          `✅ Group has been Successfully Approved!\n\n📜 Type ${global.GoatBot.config.prefix}help to See Cmds!`,
+          `✅ 𝐺𝑟𝑜𝑢𝑝 𝐻𝑎𝑠 𝐵𝑒𝑒𝑛 𝑆𝑢𝑐𝑐𝑒𝑠𝑠𝑓𝑢𝑙𝑙𝑦 𝐴𝑝𝑝𝑟𝑜𝑣𝑒𝑑 𝐵𝑦 ♡︎ 𝗛𝗔𝗦𝗔𝗡 ♡︎\n\n📜 𝑇𝑦𝑝𝑒 ${global.GoatBot.config.prefix}𝐻𝑒𝑙𝑝 𝑇𝑜 𝑆𝑒𝑒 𝐴𝑙𝑙 𝐶𝑜𝑚𝑚𝑎𝑛𝑑𝑠!`,
           group.threadID
         );
 
         await api.changeNickname(
-          `${global.GoatBot.config.nickNameBot || "🦋𝗩𝗶𝘅𝗮✨"}`,
+          `${global.GoatBot.config.nickNameBot || "🦋𝙔𝙤𝙤 𝙔𝙤𝙤 𝙃𝙖𝙨𝙪✨"}`,
           group.threadID,
           api.getCurrentUserID()
         );
@@ -116,13 +116,13 @@ module.exports = {
         index++;
       }
 
-      msg += `Reply with the 𝗡𝘂𝗺𝗯𝗲𝗿 to approve!\n`;
-      msg += `✨ Reply with "𝗖" to Cancel.\n`;
+      msg += `🦋 Reply with the correct group number to approve!\n`;
+      msg += `✨ Reply with "c" to Cancel.\n`;
 
       return api.sendMessage(
-        `✨ Pending Groups & Users ${type
+        `✨ | [ Pending Groups & Users ${type
           .charAt(0)
-          .toUpperCase()}${type.slice(1)}\n\n${msg}`,
+          .toUpperCase()}${type.slice(1)} List ✨ ]\n\n${msg}`,
         threadID,
         (error, info) => {
           global.GoatBot.onReply.set(info.messageID, {
