@@ -5,7 +5,7 @@ if (!global.temp.welcomeEvent)
 module.exports = {
   config: {
     name: "welcome",
-    version: "1.7",
+    version: "1.8",
     author: "Nur",
     category: "events"
   },
@@ -46,32 +46,55 @@ module.exports = {
       const { threadID } = event;
       const { nickNameBot } = global.GoatBot.config;
       const prefix = global.utils.getPrefix(threadID);
+      
+      // Ensure event.logMessageData and addedParticipants exist
+      if (!event.logMessageData || !event.logMessageData.addedParticipants) {
+        console.error("Welcome event error: Invalid event data structure");
+        return;
+      }
+      
       const dataAddedParticipants = event.logMessageData.addedParticipants;
 
+      // Bot was added to group
       if (dataAddedParticipants.some((item) => item.userFbId == api.getCurrentUserID())) {
         if (nickNameBot)
           api.changeNickname(nickNameBot, threadID, api.getCurrentUserID());
         return message.send(getLang("welcomeMessage", prefix));
       }
 
+      // Initialize temp storage for this thread if not exists
       if (!global.temp.welcomeEvent[threadID])
         global.temp.welcomeEvent[threadID] = {
           joinTimeout: null,
           dataAddedParticipants: []
         };
 
+      // Add new participants to the queue
       global.temp.welcomeEvent[threadID].dataAddedParticipants.push(...dataAddedParticipants);
+      
+      // Clear previous timeout
       clearTimeout(global.temp.welcomeEvent[threadID].joinTimeout);
 
+      // Set new timeout to process welcome message
       global.temp.welcomeEvent[threadID].joinTimeout = setTimeout(async function () {
         try {
           const threadData = await threadsData.get(threadID);
-          if (threadData.settings.sendWelcomeMessage == false)
+          
+          // Check if welcome messages are enabled for this thread
+          if (threadData && threadData.settings && threadData.settings.sendWelcomeMessage === false)
             return;
 
-          const dataAddedParticipants = global.temp.welcomeEvent[threadID].dataAddedParticipants;
+          // Get data from temporary storage
+          const dataAddedParticipants = global.temp.welcomeEvent[threadID].dataAddedParticipants || [];
+          
+          // Ensure thread data exists
+          if (!threadData || !threadData.data) {
+            console.error(`Welcome event error: Invalid thread data for ID ${threadID}`);
+            return;
+          }
+          
           const dataBanned = threadData.data.banned_ban || [];
-          const threadName = threadData.threadName;
+          const threadName = threadData.threadName || "this group";
           const userName = [];
           const mentions = [];
           let multiple = false;
@@ -79,7 +102,9 @@ module.exports = {
           if (dataAddedParticipants.length > 1)
             multiple = true;
 
+          // Process each added participant
           for (const user of dataAddedParticipants) {
+            if (!user || !user.userFbId || !user.fullName) continue;
             if (dataBanned.some((item) => item.id == user.userFbId))
               continue;
             userName.push(user.fullName);
@@ -88,11 +113,15 @@ module.exports = {
 
           if (userName.length == 0) return;
 
-          let { welcomeMessage = getLang("defaultWelcomeMessage") } = threadData.data;
+          // Get custom welcome message or use default
+          let { welcomeMessage = getLang("defaultWelcomeMessage") } = threadData.data || {};
+          
+          // Prepare message form
           const form = {
             mentions: welcomeMessage.match(/\{userNameTag\}/g) ? mentions : null
           };
 
+          // Replace placeholders in welcome message
           welcomeMessage = welcomeMessage
             .replace(/\{userName\}|\{userNameTag\}/g, userName.join(", "))
             .replace(/\{boxName\}|\{threadName\}/g, threadName)
@@ -115,19 +144,31 @@ module.exports = {
 
           form.body = welcomeMessage;
 
-          if (threadData.data.welcomeAttachment) {
+          // Handle welcome attachments if available
+          if (threadData.data && threadData.data.welcomeAttachment && Array.isArray(threadData.data.welcomeAttachment)) {
             const files = threadData.data.welcomeAttachment;
-            const attachments = files.map(file => drive.getFile(file, "stream"));
-            const results = await Promise.allSettled(attachments);
-            form.attachment = results
-              .filter(({ status }) => status === "fulfilled")
-              .map(({ value }) => value);
+            try {
+              // Properly handle attachments with Promise.all
+              const attachmentPromises = files.map(file => drive.getFile(file, "stream"));
+              const attachments = await Promise.all(attachmentPromises);
+              
+              // Filter out any null or undefined attachments
+              form.attachment = attachments.filter(attachment => attachment);
+            } catch (attachmentError) {
+              console.error("Welcome attachment error:", attachmentError);
+              // Continue without attachments if there's an error
+            }
           }
 
-          message.send(form);
+          // Send welcome message
+          await message.send(form);
+          
+          // Clean up temporary storage
           delete global.temp.welcomeEvent[threadID];
         } catch (err) {
           console.error("Welcome event error:", err);
+          // Clean up temporary storage even on error
+          delete global.temp.welcomeEvent[threadID];
         }
       }, 1500);
     }
