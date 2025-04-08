@@ -1,7 +1,7 @@
 {
 	"facebookAccount": {
-		"email": "",
-		"password": "",
+		"email": "vixabot123@gmail.com",
+		"password": "poi098@#$_",
 		"2FASecret": "",
 		"i_user": "",
 		"proxy": null,
@@ -47,8 +47,8 @@
 			"apiKey": ""
 		},
 		"gRecaptcha": {
-			"siteKey": "6Ld5ZsEqAAAAAIeOa3wkhw4on216YZdzylqvQraI",
-			"secretKey": "6Ld5ZsEqAAAAAHP5_g9kqP3mwpFA4UqY5nliUsQb"
+			"siteKey": "6LfR_eIqAAAAAJ7iv5GGCSTMTbhbzyUtpYQcwHXS",
+			"secretKey": "6LfR_eIqAAAAALlwNhRONS5BLwglWLVImOt-4LT-"
 		}
 	},
 	"dashBoard": {
