@@ -7,7 +7,7 @@ module.exports = {
 		version: "1.4",
 		author: "Nur",
 		countDown: 2,
-		role: 2,
+		role: 0,
 		description: "Thay đổi dấu lệnh của bot trong box chat của bạn hoặc cả hệ thống bot (chỉ admin bot)",
 		category: "config",
 		guide: {
