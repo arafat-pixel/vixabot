@@ -5,7 +5,7 @@ if (!global.temp.welcomeEvent)
 module.exports = {
   config: {
     name: "welcome",
-    version: "1.8",
+    version: "1.9",
     author: "Nur",
     category: "events"
   },
@@ -40,137 +40,225 @@ module.exports = {
     }
   },
 
-  onStart: async ({ threadsData, message, event, api, getLang }) => {
-    if (event.logMessageType == "log:subscribe") {
-      const hours = getTime("HH");
-      const { threadID } = event;
-      const { nickNameBot } = global.GoatBot.config;
-      const prefix = global.utils.getPrefix(threadID);
+  onStart: async function({ threadsData, message, event, api, getLang }) {
+    try {
+      // Check if it's a subscribe event
+      if (event.logMessageType !== "log:subscribe") return;
       
-      // Ensure event.logMessageData and addedParticipants exist
+      const { threadID } = event;
+      
+      // Debug logs
+      console.log(`[DEBUG] Welcome event triggered for thread ${threadID}`);
+      console.log(`[DEBUG] Event data:`, JSON.stringify(event.logMessageData || {}));
+      
       if (!event.logMessageData || !event.logMessageData.addedParticipants) {
-        console.error("Welcome event error: Invalid event data structure");
+        console.error("[ERROR] Invalid event data structure");
         return;
       }
       
       const dataAddedParticipants = event.logMessageData.addedParticipants;
-
-      // Bot was added to group
-      if (dataAddedParticipants.some((item) => item.userFbId == api.getCurrentUserID())) {
-        if (nickNameBot)
-          api.changeNickname(nickNameBot, threadID, api.getCurrentUserID());
-        return message.send(getLang("welcomeMessage", prefix));
+      console.log(`[DEBUG] Added participants count: ${dataAddedParticipants.length}`);
+      
+      // Check if bot was added
+      if (dataAddedParticipants.some(item => item.userFbId == api.getCurrentUserID())) {
+        const { nickNameBot } = global.GoatBot.config;
+        const prefix = global.utils.getPrefix(threadID);
+        console.log(`[DEBUG] Bot was added to group ${threadID}, setting nickname: ${nickNameBot}`);
+        
+        // Set bot nickname if configured
+        if (nickNameBot) {
+          try {
+            await api.changeNickname(nickNameBot, threadID, api.getCurrentUserID());
+          } catch (err) {
+            console.error(`[ERROR] Failed to set bot nickname: ${err.message}`);
+          }
+        }
+        
+        // Send welcome message for bot
+        try {
+          await message.send(getLang("welcomeMessage", prefix));
+          console.log(`[DEBUG] Bot welcome message sent to thread ${threadID}`);
+          return;
+        } catch (err) {
+          console.error(`[ERROR] Failed to send bot welcome message: ${err.message}`);
+          return;
+        }
       }
-
-      // Initialize temp storage for this thread if not exists
-      if (!global.temp.welcomeEvent[threadID])
+      
+      // Initialize welcome event storage for this thread
+      if (!global.temp.welcomeEvent[threadID]) {
         global.temp.welcomeEvent[threadID] = {
           joinTimeout: null,
           dataAddedParticipants: []
         };
-
-      // Add new participants to the queue
-      global.temp.welcomeEvent[threadID].dataAddedParticipants.push(...dataAddedParticipants);
+      }
       
-      // Clear previous timeout
-      clearTimeout(global.temp.welcomeEvent[threadID].joinTimeout);
-
-      // Set new timeout to process welcome message
-      global.temp.welcomeEvent[threadID].joinTimeout = setTimeout(async function () {
+      // Store new participants
+      global.temp.welcomeEvent[threadID].dataAddedParticipants.push(...dataAddedParticipants);
+      console.log(`[DEBUG] Added ${dataAddedParticipants.length} participants to welcome queue`);
+      
+      // Clear previous timeout to avoid duplicate messages
+      if (global.temp.welcomeEvent[threadID].joinTimeout) {
+        clearTimeout(global.temp.welcomeEvent[threadID].joinTimeout);
+        console.log(`[DEBUG] Cleared previous welcome timeout`);
+      }
+      
+      // Set timeout to send welcome message
+      global.temp.welcomeEvent[threadID].joinTimeout = setTimeout(async () => {
         try {
-          const threadData = await threadsData.get(threadID);
+          console.log(`[DEBUG] Welcome timeout triggered for thread ${threadID}`);
           
-          // Check if welcome messages are enabled for this thread
-          if (threadData && threadData.settings && threadData.settings.sendWelcomeMessage === false)
-            return;
-
-          // Get data from temporary storage
-          const dataAddedParticipants = global.temp.welcomeEvent[threadID].dataAddedParticipants || [];
-          
-          // Ensure thread data exists
-          if (!threadData || !threadData.data) {
-            console.error(`Welcome event error: Invalid thread data for ID ${threadID}`);
+          // Get thread data from database
+          let threadData = null;
+          try {
+            threadData = await threadsData.get(threadID);
+            console.log(`[DEBUG] Thread data retrieved for ${threadID}`);
+          } catch (err) {
+            console.error(`[ERROR] Failed to get thread data: ${err.message}`);
+            delete global.temp.welcomeEvent[threadID];
             return;
           }
           
-          const dataBanned = threadData.data.banned_ban || [];
-          const threadName = threadData.threadName || "this group";
+          // Check if welcome messages are enabled
+          if (threadData && threadData.settings && threadData.settings.sendWelcomeMessage === false) {
+            console.log(`[DEBUG] Welcome messages disabled for thread ${threadID}`);
+            delete global.temp.welcomeEvent[threadID];
+            return;
+          }
+          
+          // Get participants from temp storage
+          const participants = global.temp.welcomeEvent[threadID].dataAddedParticipants || [];
+          console.log(`[DEBUG] Processing ${participants.length} participants`);
+          
+          if (!participants.length) {
+            console.log(`[DEBUG] No participants to welcome`);
+            delete global.temp.welcomeEvent[threadID];
+            return;
+          }
+          
+          // Get banned users list
+          const dataBanned = (threadData && threadData.data && threadData.data.banned_ban) || [];
+          
+          // Get thread name
+          const threadName = threadData && threadData.threadName ? threadData.threadName : "this group";
+          
+          // Process participants for welcome message
           const userName = [];
           const mentions = [];
-          let multiple = false;
-
-          if (dataAddedParticipants.length > 1)
-            multiple = true;
-
-          // Process each added participant
-          for (const user of dataAddedParticipants) {
-            if (!user || !user.userFbId || !user.fullName) continue;
-            if (dataBanned.some((item) => item.id == user.userFbId))
+          const multiple = participants.length > 1;
+          
+          for (const user of participants) {
+            // Skip if user is missing required data
+            if (!user || !user.userFbId || !user.fullName) {
+              console.log(`[DEBUG] Skipping invalid user data:`, user);
               continue;
+            }
+            
+            // Skip banned users
+            if (dataBanned.some(item => item.id == user.userFbId)) {
+              console.log(`[DEBUG] Skipping banned user: ${user.userFbId}`);
+              continue;
+            }
+            
             userName.push(user.fullName);
             mentions.push({ tag: user.fullName, id: user.userFbId });
           }
-
-          if (userName.length == 0) return;
-
-          // Get custom welcome message or use default
-          let { welcomeMessage = getLang("defaultWelcomeMessage") } = threadData.data || {};
           
-          // Prepare message form
-          const form = {
-            mentions: welcomeMessage.match(/\{userNameTag\}/g) ? mentions : null
-          };
-
+          // Exit if no valid users to welcome
+          if (userName.length === 0) {
+            console.log(`[DEBUG] No valid users to welcome`);
+            delete global.temp.welcomeEvent[threadID];
+            return;
+          }
+          
+          // Get custom welcome message or default
+          let welcomeMessage = getLang("defaultWelcomeMessage");
+          if (threadData && threadData.data && threadData.data.welcomeMessage) {
+            welcomeMessage = threadData.data.welcomeMessage;
+          }
+          
+          // Get current session based on time
+          const hours = getTime("HH");
+          const session = hours <= 10
+            ? getLang("session1")
+            : hours <= 12
+              ? getLang("session2")
+              : hours <= 18
+                ? getLang("session3")
+                : hours <= 21
+                  ? getLang("session4")
+                  : getLang("session5");
+          
           // Replace placeholders in welcome message
           welcomeMessage = welcomeMessage
             .replace(/\{userName\}|\{userNameTag\}/g, userName.join(", "))
             .replace(/\{boxName\}|\{threadName\}/g, threadName)
-            .replace(
-              /\{multiple\}/g,
-              multiple ? getLang("multiple2") : getLang("multiple1")
-            )
-            .replace(
-              /\{session\}/g,
-              hours <= 10
-                ? getLang("session1")
-                : hours <= 12
-                  ? getLang("session2")
-                  : hours <= 18
-                    ? getLang("session3")
-                    : hours <= 21
-                      ? getLang("session4")
-                      : getLang("session5")
-            );
-
-          form.body = welcomeMessage;
-
-          // Handle welcome attachments if available
-          if (threadData.data && threadData.data.welcomeAttachment && Array.isArray(threadData.data.welcomeAttachment)) {
-            const files = threadData.data.welcomeAttachment;
+            .replace(/\{multiple\}/g, multiple ? getLang("multiple2") : getLang("multiple1"))
+            .replace(/\{session\}/g, session);
+          
+          // Create message form
+          const form = {
+            body: welcomeMessage
+          };
+          
+          // Add mentions if userNameTag is used
+          if (welcomeMessage.match(/\{userNameTag\}/g)) {
+            form.mentions = mentions;
+          }
+          
+          // Handle welcome attachments
+          if (threadData && threadData.data && 
+              threadData.data.welcomeAttachment && 
+              Array.isArray(threadData.data.welcomeAttachment) && 
+              threadData.data.welcomeAttachment.length > 0) {
+            
             try {
-              // Properly handle attachments with Promise.all
-              const attachmentPromises = files.map(file => drive.getFile(file, "stream"));
-              const attachments = await Promise.all(attachmentPromises);
+              console.log(`[DEBUG] Processing ${threadData.data.welcomeAttachment.length} welcome attachments`);
               
-              // Filter out any null or undefined attachments
-              form.attachment = attachments.filter(attachment => attachment);
+              // Get attachment promises
+              const attachmentPromises = threadData.data.welcomeAttachment.map(async (fileId) => {
+                try {
+                  return await drive.getFile(fileId, "stream");
+                } catch (err) {
+                  console.error(`[ERROR] Failed to get attachment ${fileId}: ${err.message}`);
+                  return null;
+                }
+              });
+              
+              // Wait for all attachments
+              const attachmentResults = await Promise.all(attachmentPromises);
+              
+              // Filter out failed attachments
+              form.attachment = attachmentResults.filter(attachment => attachment !== null);
+              console.log(`[DEBUG] Loaded ${form.attachment.length} attachments successfully`);
             } catch (attachmentError) {
-              console.error("Welcome attachment error:", attachmentError);
-              // Continue without attachments if there's an error
+              console.error(`[ERROR] Failed to process attachments: ${attachmentError.message}`);
+              // Continue without attachments
             }
           }
-
-          // Send welcome message
-          await message.send(form);
           
-          // Clean up temporary storage
+          // Send welcome message
+          try {
+            console.log(`[DEBUG] Sending welcome message to thread ${threadID}`);
+            await message.send(form);
+            console.log(`[DEBUG] Welcome message sent successfully`);
+          } catch (sendError) {
+            console.error(`[ERROR] Failed to send welcome message: ${sendError.message}`);
+          }
+          
+          // Clean up
           delete global.temp.welcomeEvent[threadID];
-        } catch (err) {
-          console.error("Welcome event error:", err);
-          // Clean up temporary storage even on error
+          
+        } catch (timeoutError) {
+          console.error(`[ERROR] Welcome timeout error: ${timeoutError.message}`);
+          // Clean up even on error
           delete global.temp.welcomeEvent[threadID];
         }
       }, 1500);
+      
+    } catch (mainError) {
+      console.error(`[CRITICAL] Welcome event main error: ${mainError.message}`);
+      console.error(mainError.stack);
     }
   }
 };
