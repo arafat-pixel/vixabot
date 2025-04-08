@@ -5,7 +5,7 @@ const request = require("request");
 module.exports = {
 	config: {
 		name: "join",
-		version: "2.2",
+		version: "2.3",
 		author: "Nur",
 		countDown: 5,
 		role: 2,
@@ -21,13 +21,19 @@ module.exports = {
 		try {
 			const groupList = await api.getThreadList(100, null, ['INBOX']);
 			
-			// Include all groups, even those without names
+			// Filter only the groups where the bot is actually a member
 			const filteredList = groupList.filter(group => {
+				// Check if it's a group and the bot is a participant
+				const isGroup = group.isGroup === true;
+				const botID = api.getCurrentUserID();
+				const botIsMember = group.participantIDs && group.participantIDs.includes(botID);
+				
 				// For groups without names, assign "Unnamed Group"
-				if (group.threadName === null || group.threadName === "") {
+				if (isGroup && botIsMember && (group.threadName === null || group.threadName === "")) {
 					group.threadName = "𝗨𝗻𝗻𝗮𝗺𝗲𝗱";
 				}
-				return true;
+				
+				return isGroup && botIsMember;
 			});
 
 			if (filteredList.length === 0) {
@@ -71,9 +77,11 @@ ${formattedList.join("\n")}
 			return;
 		}
 
+		const userInput = event.body.trim();
+		
 		// Check if the message starts with "out" to handle bot removal request
-		if (args[0] && args[0].toLowerCase().startsWith("out")) {
-			const leaveRequestMatch = args[0].match(/^out(\d+)$/i);
+		if (userInput.toLowerCase().startsWith("out")) {
+			const leaveRequestMatch = userInput.match(/^out\s*(\d+)$/i);
 			if (leaveRequestMatch) {
 				const groupIndex = parseInt(leaveRequestMatch[1], 10);
 				
@@ -86,8 +94,7 @@ ${formattedList.join("\n")}
 				const leaveMessage = `⚠️ React to this message to remove the bot from "${selectedGroup.threadName}"`;
 				
 				const sentLeaveMessage = await api.sendMessage({
-					body: leaveMessage,
-					attachment: null
+					body: leaveMessage
 				}, event.threadID);
 				
 				// Set up reaction handler for bot removal
@@ -103,7 +110,7 @@ ${formattedList.join("\n")}
 			}
 		}
 
-		const groupIndex = parseInt(args[0], 10);
+		const groupIndex = parseInt(userInput, 10);
 
 		if (isNaN(groupIndex) || groupIndex <= 0) {
 			api.sendMessage('⚠️ Invalid input.\nPlease provide a valid number.', event.threadID, event.messageID);
@@ -172,12 +179,13 @@ ${formattedList.join("\n")}
 			console.error("Error joining group chat", error);
 			api.sendMessage('❌ An error occurred while processing your request.\nPlease try again later.', event.threadID, event.messageID);
 		} finally {
-global.GoatBot.onReply.delete(Reply.messageID);
+			global.GoatBot.onReply.delete(Reply.messageID);
 		}
 	},
 	
 	// Add handler for reaction
 	onReaction: async function ({ api, event, Reaction }) {
+		// Check if this is a leave reaction
 		if (!Reaction || !Reaction.leaveAction) return;
 		
 		const { author, groupToLeave } = Reaction;
@@ -196,12 +204,12 @@ global.GoatBot.onReply.delete(Reply.messageID);
 			await api.removeUserFromGroup(api.getCurrentUserID(), groupID);
 			
 			// Confirm to the author that the bot has left
-			api.sendMessage(`✅ Left from"${groupName}".`, event.threadID);
+			api.sendMessage(`✅ Left from "${groupName}".`, event.threadID);
 		} catch (error) {
 			console.error("Error leaving group chat", error);
 			api.sendMessage(`❌ Failed to leave the group "${groupToLeave.threadName}".\nError: ${error.message || "Unknown error"}`, event.threadID);
 		} finally {
-			global.GoatBot.onReaction.delete(event.messageID);
+			global.GoatBot.onReaction.delete(Reaction.messageID);
 		}
 	}
 };
