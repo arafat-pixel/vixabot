@@ -4,7 +4,7 @@ module.exports = {
 	config: {
 		name: "logsbot",
 		isBot: true,
-		version: "1.4",
+		version: "1.5",
 		author: "NTKhang",
 		envConfig: {
 			allow: true
@@ -25,11 +25,18 @@ module.exports = {
 
 	onStart: async ({ usersData, threadsData, event, api, getLang }) => {
 		const { author, threadID } = event;
-		if (
-			!(event.logMessageType == "log:subscribe" && event.logMessageData.addedParticipants.some(item => item.userFbId == api.getCurrentUserID())) &&
-			!(event.logMessageType == "log:unsubscribe" && event.logMessageData.leftParticipantFbId == api.getCurrentUserID())
-		) return;
+		
+		// Check if this is a bot being added or removed event
+		const isAddedEvent = event.logMessageType === "log:subscribe" && 
+			event.logMessageData.addedParticipants.some(item => item.userFbId == api.getCurrentUserID());
+		
+		const isRemovedEvent = event.logMessageType === "log:unsubscribe" && 
+			event.logMessageData.leftParticipantFbId == api.getCurrentUserID();
+		
+		// If neither case applies, exit early
+		if (!isAddedEvent && !isRemovedEvent) return;
 
+		// Don't process if the bot added/removed itself
 		if (author == api.getCurrentUserID()) return;
 
 		const { config } = global.GoatBot;
@@ -37,18 +44,19 @@ module.exports = {
 		const time = getTime("DD/MM/YYYY hh:mm:ss A");
 
 		try {
-			if (event.logMessageType == "log:subscribe") {
+			if (isAddedEvent) {
 				threadName = (await api.getThreadInfo(threadID)).threadName;
 				const authorName = await usersData.getName(author);
 				msg = getLang("added", authorName, author, threadName, threadID, time);
 			}
-			else if (event.logMessageType == "log:unsubscribe") {
+			else if (isRemovedEvent) {
 				const threadData = await threadsData.get(threadID);
 				threadName = threadData.threadName;
 				const authorName = await usersData.getName(author);
 				msg = getLang("kicked", authorName, author, threadName, threadID, time);
 			}
 
+			// Send notification to all admins
 			for (const adminID of config.adminBot)
 				await api.sendMessage(msg, adminID);
 		}
