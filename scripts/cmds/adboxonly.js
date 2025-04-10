@@ -2,12 +2,12 @@ module.exports = {
 	config: {
 		name: "onlyadminbox",
 		aliases: ["onlyadbox", "adboxonly", "adminboxonly"],
-		version: "1.4",
+		version: "1.5",
 		author: "NTKhang",
 		countDown: 5,
 		role: 1,
 		description: {
-			en: "turn on/off only admin box can use bot"
+			en: "Turn on/off only admin of box can use bot"
 		},
 		category: "box chat",
 		guide: {
@@ -18,35 +18,35 @@ module.exports = {
 
 	langs: {
 		en: {
-			turnedOn: "Turned on the mode, only admin of group & bot owner can use bot",
-			turnedOff: "Turned off the mode, now everyone can use the bot",
-			turnedOnNoti: "Turned on the notification when a user who is not an admin of the group uses the bot",
-			turnedOffNoti: "Turned off the notification when a user who is not an admin of the group uses the bot",
+			turnedOn: "Turned on the mode, only group admins and bot owner can use bot.",
+			turnedOff: "Turned off the mode, now everyone can use the bot.",
+			turnedOnNoti: "Turned on the notification for non-admins using the bot.",
+			turnedOffNoti: "Turned off the notification for non-admins using the bot.",
 			syntaxError: "Syntax error, only use {pn} on or {pn} off"
 		}
 	},
 
-	onStart: async function ({ args, message, event, threadsData, usersData, getLang }) {
+	onStart: async function ({ args, message, event, threadsData, getLang }) {
 		let isSetNoti = false;
 		let value;
 		let keySetData = "data.onlyAdminBox";
 		let indexGetVal = 0;
 
-		// Bot owner ID (এখানে তোমার বট মালিকের আইডি বসাও)
-		const botOwnerID = "100034630383353"; 
+		const botOwnerID = global.GoatBot.config.owner; // use config for dynamic owner ID
 
-		if (args[0] == "noti") {
+		if (args[0] === "noti") {
 			isSetNoti = true;
 			indexGetVal = 1;
 			keySetData = "data.hideNotiMessageOnlyAdminBox";
 		}
 
-		if (args[indexGetVal] == "on")
+		if (args[indexGetVal] === "on") {
 			value = true;
-		else if (args[indexGetVal] == "off")
+		} else if (args[indexGetVal] === "off") {
 			value = false;
-		else
+		} else {
 			return message.reply(getLang("syntaxError"));
+		}
 
 		await threadsData.set(event.threadID, isSetNoti ? !value : value, keySetData);
 
@@ -58,24 +58,24 @@ module.exports = {
 
 	onEvent: async function ({ event, threadsData, api }) {
 		const onlyAdminMode = await threadsData.get(event.threadID, "data.onlyAdminBox", false);
-		const botOwnerID = "100034630383353"; // তোমার বট মালিকের আইডি
+		const botOwnerID = global.GoatBot.config.owner;
 
 		if (onlyAdminMode) {
 			const threadInfo = await api.getThreadInfo(event.threadID);
-			let adminIDs = threadInfo.adminIDs.map(admin => admin.id);
-			
-			// যদি বোট মালিক গ্রুপে এডমিন না হন তবে তাকে অ্যাডমিন হিসেবে যুক্ত করুন
-			if (!adminIDs.includes(botOwnerID)) {
-				adminIDs.push(botOwnerID);
-			}
-			
-			// বোট মালিক ছাড়া যারা এডমিন না, তাদেরকে ব্যবহারের থেকে নিষিদ্ধ করুন
+			const adminIDs = threadInfo.adminIDs.map(admin => admin.id);
+
+			// bot owner always allowed
+			if (event.senderID === botOwnerID) return;
+
 			if (!adminIDs.includes(event.senderID)) {
-				return api.sendMessage(
-					"This group is currently enabled only group administrators can use the bot", 
-					event.threadID, 
-					event.messageID
-				);
+				const hideNoti = await threadsData.get(event.threadID, "data.hideNotiMessageOnlyAdminBox", false);
+				if (!hideNoti) {
+					return api.sendMessage(
+						"This group is currently restricted to only group admins using the bot.",
+						event.threadID,
+						event.messageID
+					);
+				}
 			}
 		}
 	}
