@@ -18,10 +18,10 @@ module.exports = {
 
 	langs: {
 		en: {
-			turnedOn: "Turned on the mode,only admin of group & bot owner can use bot",
-			turnedOff: "Turned off the mode,Now everyone can use the bot",
-			turnedOnNoti: "Turned on the notification when user is not admin of group use bot",
-			turnedOffNoti: "Turned off the notification when user is not admin of group use bot",
+			turnedOn: "Turned on the mode, only admin of group & bot owner can use bot",
+			turnedOff: "Turned off the mode, now everyone can use the bot",
+			turnedOnNoti: "Turned on the notification when a user who is not an admin of the group uses the bot",
+			turnedOffNoti: "Turned off the notification when a user who is not an admin of the group uses the bot",
 			syntaxError: "Syntax error, only use {pn} on or {pn} off"
 		}
 	},
@@ -62,14 +62,20 @@ module.exports = {
 
 		if (onlyAdminMode) {
 			const threadInfo = await api.getThreadInfo(event.threadID);
-			const adminIDs = threadInfo.adminIDs.map(admin => admin.id);
-
+			let adminIDs = threadInfo.adminIDs.map(admin => admin.id);
+			
+			// যদি বোট মালিক গ্রুপে এডমিন না হন তবে তাকে অ্যাডমিন হিসেবে যুক্ত করুন
 			if (!adminIDs.includes(botOwnerID)) {
-			adminIDs = [...adminIDs, botOwnerID];
+				adminIDs.push(botOwnerID);
 			}
 			
-			if (!adminIDs.includes(event.senderID) && event.senderID !== botOwnerID) {
-				return api.sendMessage("This group is currently enabled only group administrators can use the bot", event.threadID, event.messageID);
+			// বোট মালিক ছাড়া যারা এডমিন না, তাদেরকে ব্যবহারের থেকে নিষিদ্ধ করুন
+			if (!adminIDs.includes(event.senderID)) {
+				return api.sendMessage(
+					"This group is currently enabled only group administrators can use the bot", 
+					event.threadID, 
+					event.messageID
+				);
 			}
 		}
 	}
