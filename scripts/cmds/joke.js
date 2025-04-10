@@ -6,7 +6,7 @@ module.exports = {
     version: '1.0',
     author: 'JV',
     role: 0,
-    category: 'fun',
+    category: 'funny',
     shortDescription: {
       en: 'Tells a random joke.'
     },
