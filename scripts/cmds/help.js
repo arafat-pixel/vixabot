@@ -52,7 +52,7 @@ module.exports = {
         msg += `\n╭────────────⭓\n│『 ${categories[key].canonical} 』`;
         const names = categories[key].commands.sort();
         names.forEach((item) => {
-          msg += `\n│💠${item}💠`;
+          msg += `\n│⭕${item}`;
         });
         msg += `\n╰────────⭓`;
       });
