@@ -12,7 +12,7 @@ module.exports = {
     role: 0,
     shortDescription: "train image",
     longDescription: "Generate a Thomas the train image with someone's avatar",
-    category: "fun",
+    category: "funny",
     guide: {
       vi: "{pn} [@tag | uid | reply | url]",
       en: "{pn} [@tag | uid | reply | url]"
