@@ -5,7 +5,8 @@ module.exports = {
 	config: {
 	name: "autoseen",
 	version: "1.0.0",
-	hasPermssion: 2,
+	
+ Role: 2,
 	author: "Jas",
 	shortDescription: {
 			en: "Turn on/off automatically seen when new messages are available"
