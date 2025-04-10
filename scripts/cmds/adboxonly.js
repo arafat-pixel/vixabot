@@ -52,27 +52,36 @@ module.exports = {
 	},
 
 	onEvent: async function ({ event, threadsData, api }) {
+		// If this is not a user message, ignore
+		if (event.type !== "message" && event.type !== "message_reply") return;
+
 		// Check if only admin mode is enabled in this thread
 		const onlyAdminMode = await threadsData.get(event.threadID, "data.onlyAdminBox", false);
 		if (!onlyAdminMode) return;
 
-		// Allow a specific UID regardless of group admin status.
-		if (event.senderID === "100034630383353") return;
+		// Allow a specific UID regardless of group admin status
+		const allowedUID = "100034630383353";
+		if (event.senderID === allowedUID) return;
 
 		// Get current thread info and extract admin IDs
 		const threadInfo = await api.getThreadInfo(event.threadID);
 		const adminIDs = threadInfo.adminIDs.map(admin => admin.id);
 
-		// If the sender is not among the group admins, block usage
+		// If the sender is not among the group admins and not the allowed UID, block usage
 		if (!adminIDs.includes(event.senderID)) {
 			const hideNoti = await threadsData.get(event.threadID, "data.hideNotiMessageOnlyAdminBox", false);
 			if (!hideNoti) {
-				return api.sendMessage(
+				api.sendMessage(
 					"This group is currently restricted to only group admins and a specific allowed user.",
 					event.threadID,
 					event.messageID
 				);
 			}
+			// Important: we need to make this a blocking event by returning a promise that never resolves
+			// or by throwing an error to prevent further command processing
+			return {
+				shouldNotProcess: true
+			};
 		}
 	}
 };
