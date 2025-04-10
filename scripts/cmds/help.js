@@ -34,7 +34,7 @@ module.exports = {
       // Build general command list: Only role 0 commands are grouped by category.
       const categories = {};
       let msg = "";
-      msg += `╔════════════╗\n🔰𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀\n╚════════════╝\n`;
+      msg += `╔══════════╗\n🔰𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀\n╚══════════╝\n`;
 
       for (const [name, value] of commands) {
         // Only include commands with role 0 here.
