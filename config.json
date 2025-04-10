@@ -18,6 +18,9 @@
 		"enable": false,
 		"ignoreCommand": []
 	},
+"ownerOnly": {
+  "enable": false
+},
 "ownerBot" :["100034630383353"],
 	"adminBot": ["100034630383353", "100045644423035", ""],
 	"whiteListMode": {
