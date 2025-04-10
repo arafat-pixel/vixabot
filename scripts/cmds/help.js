@@ -8,7 +8,7 @@ module.exports = {
   config: {
     name: "help",
     version: "1.18",
-    author: "ShAn", 
+    author: "ShAn",
     countDown: 5,
     role: 0,
     shortDescription: {
@@ -29,68 +29,101 @@ module.exports = {
     const threadData = await threadsData.get(threadID);
     const prefix = getPrefix(threadID);
 
+    // If no argument is provided => show general commands (role 0) and ADMIN (role 1) separately.
     if (args.length === 0) {
+      // Build general command list: Only role 0 commands are grouped by category.
       const categories = {};
       let msg = "";
-
-      msg += `╔══════════════╗\n🔹 COMMAND LIST 🔹\n╚══════════════╝\n`;
+      msg += `╔════════════╗\n🔰𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀\n╚════════════╝\n`;
 
       for (const [name, value] of commands) {
-        if (value.config.role > 1 && role < value.config.role) continue;
-
-        const category = value.config.category || "Uncategorized";
-        categories[category] = categories[category] || { commands: [] };
-        categories[category].commands.push(name);
+        // Only include commands with role 0 here.
+        if (value.config.role !== 0) continue;
+        let origCategory = value.config.category || "Uncategorized";
+        let key = origCategory.toLowerCase();
+        if (!categories[key]) {
+          // Use a canonical name (all upper case) for displaying.
+          categories[key] = { canonical: origCategory.toUpperCase(), commands: [] };
+        }
+        categories[key].commands.push(name);
       }
 
-      Object.keys(categories).forEach((category) => {
-        if (category !== "info") {
-          msg += `\n╭────────────⭓\n│『 ${category.toUpperCase()} 』`;
-
-          const names = categories[category].commands.sort();
-          names.forEach((item) => {
-            msg += `\n│💠${item}💠`;
-          });
-
-          msg += `\n╰────────⭓`;
-        }
+      Object.keys(categories).forEach((key) => {
+        msg += `\n╭────────────⭓\n│『 ${categories[key].canonical} 』`;
+        const names = categories[key].commands.sort();
+        names.forEach((item) => {
+          msg += `\n│💠${item}💠`;
+        });
+        msg += `\n╰────────⭓`;
       });
 
-      const totalCommands = commands.size;
-      msg += `\n𝗖𝘂𝗿𝗿𝗲𝗻𝘁𝗹𝘆, 𝘁𝗵𝗲 𝗯𝗼𝘁 𝗵𝗮𝘀 ${totalCommands} 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀 𝘁𝗵𝗮𝘁 𝗰𝗮𝗻 𝗯𝗲 𝘂𝘀𝗲𝗱\n`;
-      msg += `\n𝗧𝘆𝗽𝗲 ${prefix}𝗵𝗲𝗹𝗽 𝗰𝗺𝗱𝗡𝗮𝗺𝗲 𝘁𝗼 𝘃𝗶𝗲𝘄 𝘁𝗵𝗲 𝗱𝗲𝘁𝗮𝗶𝗹𝘀 𝗼𝗳 𝘁𝗵𝗮𝘁 𝗰𝗼𝗺𝗺𝗮𝗻𝗱\n`;
-      msg += `\n🫧𝘽𝙊𝙏 𝙉𝘼𝙈𝙀🫧: ♡𝕮𝖍𝖔𝖈𝖔𝖑𝖆𝖙𝖊 𝕼𝖚𝖊𝖊𝖓♡`;
-      msg += `\n🔹 𝘽𝙊𝙏 𝙊𝙒𝙉𝙀𝙍 🔹`;
-      msg += `\n 	 					`;
-      msg += `\n~𝙉𝘼𝙈𝙀:✰ '𝗘𝘄'𝗿 𝗦𝗵𝗔𝗻'𝘀 ✰`;
-      msg += `\n~𝙁𝘽:https://m.facebook.com/sirana252`;
+      // Build ADMIN command list: Only include commands with role 1.
+      const adminCommands = Array.from(commands.values())
+        .filter((cmd) => cmd.config.role === 1)
+        .map((cmd) => cmd.config.name)
+        .sort((a, b) => a.localeCompare(b));
 
-      await message.reply({
-        body: msg,
-      });
+      if (adminCommands.length > 0) {
+        msg += `\n\n╔══════════════╗\n🔰𝗔𝗱𝗺𝗶𝗻 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀 \n╚══════════════╝\n`;
+        adminCommands.forEach((cmdName) => {
+          msg += `\n💥- ${cmdName}`;
+        });
+      }
+
+      // Summary: Total commands, all user commands (role 0) and admin commands (role 1)
+      const totalAll = commands.size;
+      const totalGeneral = Array.from(commands.values()).filter(cmd => cmd.config.role === 0).length;
+      const totalAdmin = Array.from(commands.values()).filter(cmd => cmd.config.role === 1).length;
+      msg += `\n\n𝗧𝗼𝘁𝗮𝗹 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀: ${totalAll}`;
+      msg += `\n𝗔𝗹𝗹 𝘂𝘀𝗲𝗿 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀: ${totalGeneral}`;
+      msg += `\n𝗔𝗱𝗺𝗶𝗻 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀: ${totalAdmin}`;
+      
+      msg += `\n\n𝗧𝘆𝗽𝗲 ${prefix}help 𝗖𝗼𝗺𝗺𝗮𝗻𝗱 𝗻𝗮𝗺𝗲 𝘁𝗼 𝘃𝗶𝗲𝘄 𝗨𝘀𝗮𝗴𝗲𝘀.!\n`;
+
+      await message.reply({ body: msg });
+
+    // If the user uses the "-c" flag for a category, handle accordingly.
     } else if (args[0] === "-c") {
       if (!args[1]) {
         await message.reply("Please specify a category name.");
         return;
       }
-
       const categoryName = args[1].toLowerCase();
+      // For category filtering, we include all commands (regardless of role) matching the category.
       const filteredCommands = Array.from(commands.values()).filter(
         (cmd) => cmd.config.category?.toLowerCase() === categoryName
       );
 
       if (filteredCommands.length === 0) {
-        await message.reply(`No commands found in the category "${categoryName}".`);
+        await message.reply(`No commands found in the category "${args[1]}".`);
         return;
       }
-
-      let msg = `╔══════════════╗\n🔹 ${categoryName.toUpperCase()} COMMANDS 🔹\n╚══════════════╝\n`;
-
+      let msg = `╔══════════════╗\n🔹 ${args[1].toUpperCase()} COMMANDS 🔹\n╚══════════════╝\n`;
       filteredCommands.forEach((cmd) => {
         msg += `\n💠 ${cmd.config.name} 💠`;
       });
-
       await message.reply(msg);
+
+    // If the user wants owner commands: /help o or /help owner
+    } else if (args[0].toLowerCase() === "o" || args[0].toLowerCase() === "owner") {
+      const ownerCommands = Array.from(commands.values())
+        .filter((cmd) => cmd.config.role === 2)
+        .map((cmd) => cmd.config.name)
+        .sort((a, b) => a.localeCompare(b));
+
+      let msg = "";
+      msg += `❤️‍🔥𝗢𝘄𝗻𝗲𝗿 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀\n`;
+      if (ownerCommands.length > 0) {
+        ownerCommands.forEach((cmdName) => {
+          msg += `\n💢- ${cmdName}`;
+        });
+      } else {
+        msg += `\nNo owner commands available.`;
+      }
+      msg += `\n\n𝗧𝘆𝗽𝗲 ${prefix}help 𝗖𝗼𝗺𝗺𝗮𝗻𝗱 𝗻𝗮𝗺𝗲 𝘁𝗼 𝘃𝗶𝗲𝘄 𝘂𝘀𝗮𝗴𝗲`;
+      await message.reply({ body: msg });
+
+    // Otherwise, assume the argument is a command name and show its details.
     } else {
       const commandName = args[0].toLowerCase();
       const command = commands.get(commandName) || commands.get(aliases.get(commandName));
@@ -109,30 +142,22 @@ module.exports = {
         const guideBody = configCommand.guide?.en || "No guide available.";
         const usage = guideBody.replace(/{p}/g, prefix).replace(/{n}/g, configCommand.name);
 
-        const response = `╭── NAME ────⭓\n` +
-          `│ ${configCommand.name}\n` +
-          `├── INFO\n` +
-          `│ Description: ${longDescription}\n` +
-          `│ Other names: ${configCommand.aliases ? configCommand.aliases.join(", ") : "Do not have"}\n` +
-          `│ Version: ${configCommand.version || "1.0"}\n` +
-          `│ Role: ${roleText}\n` +
-          `│ Time per command: ${configCommand.countDown || 1}s\n` +
-          `│ Author: ${author}\n` +
-          `├── Usage\n` +
-          `│ ${usage}\n` +
-          `├── Notes\n` +
-          `│ The content inside <ShAn> can be changed\n` +
-          `│ The content inside [a|b|c] is a or b or c\n` +
-          `╰━━━━━━━❖`;
-
+const response =
+  `𝗡𝗮𝗺𝗲 : ${configCommand.name}${configCommand.aliases && configCommand.aliases.length > 0 ? ', ' + configCommand.aliases.join(", ") : ''}\n` +
+  `𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻 : ${longDescription}\n` +
+  `𝗨𝘀𝗮𝗴𝗲 : ${usage}\n` +
+  `𝗥𝗼𝗹𝗲 : ${roleText}\n` +
+  `𝗧𝗶𝗺𝗲 𝗽𝗲𝗿 𝘀𝗲𝗰𝗼𝗻𝗱 : ${configCommand.countDown || 1}s\n` +
+  `𝗩𝗲𝗿𝘀𝗶𝗼𝗻 : ${configCommand.version || "1.0"}\n` +
+  `𝗔𝘂𝘁𝗵𝗼𝗿 : ${author}`;
         await message.reply(response);
       }
     }
   },
 };
 
-function roleTextToString(roleText) {
-  switch (roleText) {
+function roleTextToString(roleValue) {
+  switch (roleValue) {
     case 0:
       return "0 (All users)";
     case 1:
@@ -142,4 +167,4 @@ function roleTextToString(roleText) {
     default:
       return "Unknown role";
   }
-    }
+}
