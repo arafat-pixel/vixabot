@@ -3,95 +3,77 @@ const config = require("../../confiq.json");
 module.exports = {
 	config: {
 		name: "adboxonly",
-		aliases: ["adbox", "abox", "adminbox", "adminboxonly"],
-		version: "1.3",
+		aliases: ["", "", ""],
+		version: "1.0",
 		author: "Nur",
 		countDown: 2,
 		role: 2,
 		description: {
-			vi: "bật/tắt chế độ chỉ quản trị của viên nhóm mới có thể sử dụng bot",
-			en: "turn on/off only group 𝗮𝗱𝗺𝗶𝗻 can use bot"
+			vi: "Bật/tắt chế độ chỉ quản trị viên nhóm và bot mới có thể sử dụng bot",
+			en: "Toggle mode so that only group admins & bot admins can use the bot"
 		},
-		category: "𝗕𝗢𝗧 𝗠𝗔𝗡𝗔𝗚𝗘𝗠𝗘𝗡𝗧",
+		category: "BOT MANAGEMENT",
 		guide: {
-			vi: "   {pn} [on | off]: bật/tắt chế độ chỉ quản trị viên nhóm mới có thể sử dụng bot"
-				+ "\n   {pn} noti [on | off]: bật/tắt thông báo khi người dùng không phải là quản trị viên nhóm sử dụng bot",
-			en: "   {pn} [on | off]: turn on/off the mode only admin of group can use bot"
-				+ "\n   {pn} noti [on | off]: turn on/off the notification when user is not admin of group use bot"
+			vi: "   {pn} [on | off] : bật/tắt chế độ chỉ cho quản trị viên",
+			en: "   {pn} [on | off] : toggle admin-only mode"
 		}
 	},
 
 	langs: {
 		vi: {
-			turnedOn: "Đã bật chế độ chỉ quản trị viên nhóm mới có thể sử dụng bot",
-			turnedOff: "Đã tắt chế độ chỉ quản trị viên nhóm mới có thể sử dụng bot",
-			turnedOnNoti: "Đã bật thông báo khi người dùng không phải là quản trị viên nhóm sử dụng bot",
-			turnedOffNoti: "Đã tắt thông báo khi người dùng không phải là quản trị viên nhóm sử dụng bot",
+			turnedOn: "Đã bật chế độ chỉ quản trị viên (nhóm & bot admin) có thể sử dụng bot",
+			turnedOff: "Đã tắt chế độ quản trị viên, mọi người có thể sử dụng bot",
 			syntaxError: "Sai cú pháp, chỉ có thể dùng {pn} on hoặc {pn} off"
 		},
 		en: {
-			turnedOn: "Turned on now only group 𝗔𝗱𝗺𝗶𝗻 can use bot",
-			turnedOff: "Turned off now everyone can use bot",
-			turnedOnNoti: "Turned on the notification when user is not admin of group use bot",
-			turnedOffNoti: "Turned off the notification when user is not admin of group use bot",
+			turnedOn: "Admin-only mode is enabled: only group & bot admins can use the bot",
+			turnedOff: "Admin-only mode is disabled: everyone can use the bot",
 			syntaxError: "Syntax error, only use {pn} on or {pn} off"
 		}
 	},
 
 	onStart: async function ({ args, message, event, threadsData, getLang }) {
-		const botAdmins = config.adminBot || [];
-
-		let isSetNoti = false;
 		let value;
-		let keySetData = "data.onlyAdminBox";
-		let indexGetVal = 0;
+		// Use a key to store the setting in thread data
+		const keySetData = "data.adminOnlyMode";
 
-		if (args[0] == "noti") {
-			isSetNoti = true;
-			indexGetVal = 1;
-			keySetData = "data.hideNotiMessageOnlyAdminBox";
+		// Validate command argument
+		if (args[0] === "on") {
+			value = true;
+		} else if (args[0] === "off") {
+			value = false;
+		} else {
+			return message.reply(getLang("syntaxError"));
 		}
 
-		if (args[indexGetVal] == "on")
-			value = true;
-		else if (args[indexGetVal] == "off")
-			value = false;
-		else
-			return message.reply(getLang("syntaxError"));
+		// Store the new setting for the current thread
+		await threadsData.set(event.threadID, value, keySetData);
 
-		// Set the config
-		await threadsData.set(event.threadID, isSetNoti ? !value : value, keySetData);
-
-		// Notify
-		if (isSetNoti)
-			return message.reply(value ? getLang("turnedOnNoti") : getLang("turnedOffNoti"));
-		else
-			return message.reply(value ? getLang("turnedOn") : getLang("turnedOff"));
+		// Reply with the appropriate message
+		return message.reply(value ? getLang("turnedOn") : getLang("turnedOff"));
 	},
 
-	// Middleware to check if the sender is allowed
+	// Middleware to check if the sender is allowed to use the bot when admin-only mode is on
 	onChat: async function ({ event, threadsData, role }) {
+		// Retrieve the stored data for this thread
 		const threadData = await threadsData.get(event.threadID);
-		const onlyAdmin = threadData?.data?.onlyAdminBox;
-		const hideNoti = threadData?.data?.hideNotiMessageOnlyAdminBox;
-		const botAdmins = require("../../confiq.json").adminBot || [];
+		const adminOnlyMode = threadData?.data?.adminOnlyMode;
 
-		// If the restriction is OFF, allow all
-		if (!onlyAdmin) return;
+		// If admin-only mode is not enabled, allow all messages.
+		if (!adminOnlyMode) return;
 
-		// If sender is bot admin, allow
+		// Get the list of bot admin IDs from the configuration.
+		const botAdmins = config.adminBot || [];
+
+		// Allow bot admins
 		if (botAdmins.includes(event.senderID)) return;
 
-		// If sender is group admin (role 1 or 2), allow
+		// Allow group admins (role 1 or 2)
 		if (role >= 1) return;
 
-		// Otherwise block message
-		if (!hideNoti)
-			return {
-				reply: "Only group or bot admin can use bot while admin-only mode is enabled."
-			};
-
-		// Silent block
-		return false;
+		// Block the message and reply with a warning.
+		return {
+			reply: "Only group or bot admins are allowed to use the bot while admin-only mode is enabled."
+		};
 	}
 };
