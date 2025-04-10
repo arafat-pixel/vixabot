@@ -1,28 +1,30 @@
+const { config } = global.GoatBot; // Get the global configuration
+
 module.exports = {
 	config: {
 		name: "onlyadminbox",
 		aliases: ["onlyadbox", "adboxonly", "adminboxonly"],
 		version: "1.5",
-		author: "NTKhang",
+		author: "NTKhang + fixed by Nur ",
 		countDown: 5,
 		role: 1,
 		description: {
-			en: "Turn on/off only admin of box can use bot"
+			en: "Turn on/off mode where only group admins and bot owner(s) can use the bot"
 		},
 		category: "box chat",
 		guide: {
-			en: "   {pn} [on | off]: turn on/off the mode only admin of group can use bot"
-				+ "\n   {pn} noti [on | off]: turn on/off the notification when user is not admin of group use bot"
+			en: "   {pn} [on | off]: turn on/off the mode where only group admins and bot owner(s) can use the bot"
+				+ "\n   {pn} noti [on | off]: turn on/off the notification when a non-admin user uses the bot"
 		}
 	},
 
 	langs: {
 		en: {
-			turnedOn: "Turned on the mode, only group admins and bot owner can use bot.",
-			turnedOff: "Turned off the mode, now everyone can use the bot.",
-			turnedOnNoti: "Turned on the notification for non-admins using the bot.",
-			turnedOffNoti: "Turned off the notification for non-admins using the bot.",
-			syntaxError: "Syntax error, only use {pn} on or {pn} off"
+			turnedOn: "Turned on the mode: only group admins and bot owner(s) can use the bot.",
+			turnedOff: "Turned off the mode: now everyone can use the bot.",
+			turnedOnNoti: "Turned on the notification for non-admin users trying to use the bot.",
+			turnedOffNoti: "Turned off the notification for non-admin users trying to use the bot.",
+			syntaxError: "Syntax error, please use {pn} on or {pn} off"
 		}
 	},
 
@@ -31,8 +33,6 @@ module.exports = {
 		let value;
 		let keySetData = "data.onlyAdminBox";
 		let indexGetVal = 0;
-
-		const botOwnerID = global.GoatBot.config.owner; // use config for dynamic owner ID
 
 		if (args[0] === "noti") {
 			isSetNoti = true;
@@ -50,32 +50,38 @@ module.exports = {
 
 		await threadsData.set(event.threadID, isSetNoti ? !value : value, keySetData);
 
-		if (isSetNoti)
+		if (isSetNoti) {
 			return message.reply(value ? getLang("turnedOnNoti") : getLang("turnedOffNoti"));
-		else
+		} else {
 			return message.reply(value ? getLang("turnedOn") : getLang("turnedOff"));
+		}
 	},
 
 	onEvent: async function ({ event, threadsData, api }) {
+		// Check if the only admin mode is enabled for the current thread.
 		const onlyAdminMode = await threadsData.get(event.threadID, "data.onlyAdminBox", false);
-		const botOwnerID = global.GoatBot.config.owner;
+		if (!onlyAdminMode) return;
 
-		if (onlyAdminMode) {
-			const threadInfo = await api.getThreadInfo(event.threadID);
-			const adminIDs = threadInfo.adminIDs.map(admin => admin.id);
+		// Get the bot owner(s) from the configuration.
+		// Filter out any empty strings.
+		const botOwnerIDs = (config.adminBot || []).filter(id => id.trim() !== "");
 
-			// bot owner always allowed
-			if (event.senderID === botOwnerID) return;
+		// Allow if the sender is one of the bot owners.
+		if (botOwnerIDs.includes(event.senderID)) return;
 
-			if (!adminIDs.includes(event.senderID)) {
-				const hideNoti = await threadsData.get(event.threadID, "data.hideNotiMessageOnlyAdminBox", false);
-				if (!hideNoti) {
-					return api.sendMessage(
-						"This group is currently restricted to only group admins using the bot.",
-						event.threadID,
-						event.messageID
-					);
-				}
+		// Retrieve group thread info and get the list of admin IDs.
+		const threadInfo = await api.getThreadInfo(event.threadID);
+		const adminIDs = threadInfo.adminIDs.map(admin => admin.id);
+
+		// If the sender is not among the group admins, block usage.
+		if (!adminIDs.includes(event.senderID)) {
+			const hideNoti = await threadsData.get(event.threadID, "data.hideNotiMessageOnlyAdminBox", false);
+			if (!hideNoti) {
+				return api.sendMessage(
+					"This group is currently restricted to only group admins and bot owner(s).",
+					event.threadID,
+					event.messageID
+				);
 			}
 		}
 	}
