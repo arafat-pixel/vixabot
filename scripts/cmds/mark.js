@@ -8,7 +8,7 @@ module.exports = {
     author: "Rishad",
     countDown: 5,
     role: 0,
-    category: "fun",
+    category: "funny",
     shortDescription: {
       en: "",
     },
