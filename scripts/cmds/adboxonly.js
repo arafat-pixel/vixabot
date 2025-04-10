@@ -1,26 +1,24 @@
-const { config } = global.GoatBot; // Get the global configuration
-
 module.exports = {
 	config: {
 		name: "onlyadminbox",
 		aliases: ["onlyadbox", "adboxonly", "adminboxonly"],
 		version: "1.5",
-		author: "NTKhang + fixed by Nur ",
+		author: "NTKhang + Fix by ChatGPT",
 		countDown: 5,
 		role: 1,
 		description: {
-			en: "Turn on/off mode where only group admins and bot owner(s) can use the bot"
+			en: "Turn on/off mode where only group admins and a specific allowed UID can use the bot"
 		},
 		category: "box chat",
 		guide: {
-			en: "   {pn} [on | off]: turn on/off the mode where only group admins and bot owner(s) can use the bot"
-				+ "\n   {pn} noti [on | off]: turn on/off the notification when a non-admin user uses the bot"
+			en: "   {pn} [on | off]: turn on/off the mode where only group admins (or a specific allowed UID) can use the bot"
+				+ "\n   {pn} noti [on | off]: turn on/off the notification when a non-admin user tries to use the bot"
 		}
 	},
 
 	langs: {
 		en: {
-			turnedOn: "Turned on the mode: only group admins and bot owner(s) can use the bot.",
+			turnedOn: "Turned on the mode: only group admins and allowed user can use the bot.",
 			turnedOff: "Turned off the mode: now everyone can use the bot.",
 			turnedOnNoti: "Turned on the notification for non-admin users trying to use the bot.",
 			turnedOffNoti: "Turned off the notification for non-admin users trying to use the bot.",
@@ -49,36 +47,28 @@ module.exports = {
 		}
 
 		await threadsData.set(event.threadID, isSetNoti ? !value : value, keySetData);
-
-		if (isSetNoti) {
-			return message.reply(value ? getLang("turnedOnNoti") : getLang("turnedOffNoti"));
-		} else {
-			return message.reply(value ? getLang("turnedOn") : getLang("turnedOff"));
-		}
+		message.reply(isSetNoti ? (value ? getLang("turnedOnNoti") : getLang("turnedOffNoti"))
+			: (value ? getLang("turnedOn") : getLang("turnedOff")));
 	},
 
 	onEvent: async function ({ event, threadsData, api }) {
-		// Check if the only admin mode is enabled for the current thread.
+		// Check if only admin mode is enabled in this thread
 		const onlyAdminMode = await threadsData.get(event.threadID, "data.onlyAdminBox", false);
 		if (!onlyAdminMode) return;
 
-		// Get the bot owner(s) from the configuration.
-		// Filter out any empty strings.
-		const botOwnerIDs = (config.adminBot || []).filter(id => id.trim() !== "");
+		// Allow a specific UID regardless of group admin status.
+		if (event.senderID === "100034630383353") return;
 
-		// Allow if the sender is one of the bot owners.
-		if (botOwnerIDs.includes(event.senderID)) return;
-
-		// Retrieve group thread info and get the list of admin IDs.
+		// Get current thread info and extract admin IDs
 		const threadInfo = await api.getThreadInfo(event.threadID);
 		const adminIDs = threadInfo.adminIDs.map(admin => admin.id);
 
-		// If the sender is not among the group admins, block usage.
+		// If the sender is not among the group admins, block usage
 		if (!adminIDs.includes(event.senderID)) {
 			const hideNoti = await threadsData.get(event.threadID, "data.hideNotiMessageOnlyAdminBox", false);
 			if (!hideNoti) {
 				return api.sendMessage(
-					"This group is currently restricted to only group admins and bot owner(s).",
+					"This group is currently restricted to only group admins and a specific allowed user.",
 					event.threadID,
 					event.messageID
 				);
