@@ -1,79 +1,65 @@
-const config = require("../../confiq.json");
-
 module.exports = {
 	config: {
 		name: "adboxonly",
-		aliases: ["", "", ""],
+		aliases: ["adminbox", "adminboxonly", "onlyadminbox", "onlyadbox"],
 		version: "1.0",
 		author: "Nur",
-		countDown: 2,
-		role: 2,
+		countDown: 5,
+		role: 1,
 		description: {
-			vi: "Bật/tắt chế độ chỉ quản trị viên nhóm và bot mới có thể sử dụng bot",
-			en: "Toggle mode so that only group admins & bot admins can use the bot"
+			en: "Toggle between only admins can use bot or everyone can use bot"
 		},
-		category: "BOT MANAGEMENT",
+		category: "box chat",
 		guide: {
-			vi: "   {pn} [on | off] : bật/tắt chế độ chỉ cho quản trị viên",
-			en: "   {pn} [on | off] : toggle admin-only mode"
+			en: "   {pn} [on | off]: toggle mode where only admins (group admins & bot admins) can use bot"
 		}
 	},
 
 	langs: {
-		vi: {
-			turnedOn: "Đã bật chế độ chỉ quản trị viên (nhóm & bot admin) có thể sử dụng bot",
-			turnedOff: "Đã tắt chế độ quản trị viên, mọi người có thể sử dụng bot",
-			syntaxError: "Sai cú pháp, chỉ có thể dùng {pn} on hoặc {pn} off"
-		},
 		en: {
-			turnedOn: "Admin-only mode is enabled: only group & bot admins can use the bot",
-			turnedOff: "Admin-only mode is disabled: everyone can use the bot",
+			turnedOn: "Turned on admin-only mode. Now only group admins and bot admins can use the bot",
+			turnedOff: "Turned off admin-only mode. Now everyone can use the bot",
 			syntaxError: "Syntax error, only use {pn} on or {pn} off"
 		}
 	},
 
 	onStart: async function ({ args, message, event, threadsData, getLang }) {
 		let value;
-		// Use a key to store the setting in thread data
-		const keySetData = "data.adminOnlyMode";
 
-		// Validate command argument
-		if (args[0] === "on") {
+		if (args[0] == "on")
 			value = true;
-		} else if (args[0] === "off") {
+		else if (args[0] == "off")
 			value = false;
-		} else {
+		else
 			return message.reply(getLang("syntaxError"));
-		}
 
-		// Store the new setting for the current thread
-		await threadsData.set(event.threadID, value, keySetData);
-
-		// Reply with the appropriate message
+		await threadsData.set(event.threadID, value, "data.adboxOnly");
 		return message.reply(value ? getLang("turnedOn") : getLang("turnedOff"));
 	},
 
-	// Middleware to check if the sender is allowed to use the bot when admin-only mode is on
-	onChat: async function ({ event, threadsData, role }) {
-		// Retrieve the stored data for this thread
-		const threadData = await threadsData.get(event.threadID);
-		const adminOnlyMode = threadData?.data?.adminOnlyMode;
-
-		// If admin-only mode is not enabled, allow all messages.
-		if (!adminOnlyMode) return;
-
-		// Get the list of bot admin IDs from the configuration.
-		const botAdmins = config.adminBot || [];
-
-		// Allow bot admins
-		if (botAdmins.includes(event.senderID)) return;
-
-		// Allow group admins (role 1 or 2)
-		if (role >= 1) return;
-
-		// Block the message and reply with a warning.
-		return {
-			reply: "Only group or bot admins are allowed to use the bot while admin-only mode is enabled."
-		};
+	onEvent: async function ({ event, threadsData, api, globalGoat }) {
+		const adboxOnly = await threadsData.get(event.threadID, "data.adboxOnly", false);
+		
+		if (adboxOnly && event.type === "message") {
+			// Get bot admins from config
+			const botAdmins = globalGoat.config.adminBot || [];
+			
+			// Skip checking if sender is a bot admin
+			if (botAdmins.includes(event.senderID)) {
+				return;
+			}
+			
+			// Check if sender is a group admin
+			const threadInfo = await api.getThreadInfo(event.threadID);
+			const adminIDs = threadInfo.adminIDs.map(admin => admin.id);
+			
+			if (!adminIDs.includes(event.senderID)) {
+				// If not a group admin or bot admin, ignore command
+				const hideNoti = await threadsData.get(event.threadID, "data.hideNotiMessageAdboxOnly", false);
+				if (!hideNoti) {
+					return api.sendMessage("Only group admins and bot admins can use the bot in this group", event.threadID, event.messageID);
+				}
+			}
+		}
 	}
 };
