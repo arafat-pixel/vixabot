@@ -7,7 +7,7 @@ module.exports = {
     version: "1.0",
     author: "𝗡𝘂𝗿 𝗛𝗮𝗺𝗶𝗺",
     countDown: 1,
-    role: 0,
+    role: 2,
     category: "owner",
   },
   onStart: async function({ message, event, api }) {
