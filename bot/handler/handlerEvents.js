@@ -8,114 +8,117 @@ function getType(obj) {
 }
 
 function getRole(threadData, senderID) {
-	const adminBot = global.GoatBot.config.adminBot || [];
-	if (!senderID)
-		return 0;
-	const adminBox = threadData ? threadData.adminIDs || [] : [];
-	return adminBot.includes(senderID) ? 2 : adminBox.includes(senderID) ? 1 : 0;
+  const config = global.GoatBot.config;
+  const ownerBot = config.ownerBot || [];
+  const adminBot = config.adminBot || [];
+  
+  if (!senderID) return 0;
+  
+  // Owner gets the highest role: 3.
+  if (ownerBot.includes(senderID)) return 3;
+  
+  // Check if the user is a bot admin (role 2) or thread admin (role 1).
+  const adminBox = threadData ? threadData.adminIDs || [] : [];
+  return adminBot.includes(senderID) ? 2 : adminBox.includes(senderID) ? 1 : 0;
 }
 
 function getText(type, reason, time, targetID, lang) {
-	const utils = global.utils;
-	if (type == "userBanned")
-		return utils.getText({ lang, head: "handlerEvents" }, "userBanned", reason, time, targetID);
-	else if (type == "threadBanned")
-		return utils.getText({ lang, head: "handlerEvents" }, "threadBanned", reason, time, targetID);
-	else if (type == "onlyAdminBox")
-		return utils.getText({ lang, head: "handlerEvents" }, "onlyAdminBox");
-	else if (type == "onlyAdminBot")
-		return utils.getText({ lang, head: "handlerEvents" }, "onlyAdminBot");
+  const utils = global.utils;
+  if (type === "userBanned")
+    return utils.getText({ lang, head: "handlerEvents" }, "userBanned", reason, time, targetID);
+  else if (type === "threadBanned")
+    return utils.getText({ lang, head: "handlerEvents" }, "threadBanned", reason, time, targetID);
+  else if (type === "onlyAdminBox")
+    return utils.getText({ lang, head: "handlerEvents" }, "onlyAdminBox");
+  else if (type === "onlyAdminBot")
+    return utils.getText({ lang, head: "handlerEvents" }, "onlyAdminBot");
 }
 
 function replaceShortcutInLang(text, prefix, commandName) {
-	return text
-		.replace(/\{(?:p|prefix)\}/g, prefix)
-		.replace(/\{(?:n|name)\}/g, commandName)
-		.replace(/\{pn\}/g, `${prefix}${commandName}`);
+  return text
+    .replace(/\{(?:p|prefix)\}/g, prefix)
+    .replace(/\{(?:n|name)\}/g, commandName)
+    .replace(/\{pn\}/g, `${prefix}${commandName}`);
 }
 
 function getRoleConfig(utils, command, isGroup, threadData, commandName) {
-	let roleConfig;
-	if (utils.isNumber(command.config.role)) {
-		roleConfig = {
-			onStart: command.config.role
-		};
-	}
-	else if (typeof command.config.role == "object" && !Array.isArray(command.config.role)) {
-		if (!command.config.role.onStart)
-			command.config.role.onStart = 0;
-		roleConfig = command.config.role;
-	}
-	else {
-		roleConfig = {
-			onStart: 0
-		};
-	}
+  let roleConfig;
+  if (utils.isNumber(command.config.role)) {
+    roleConfig = {
+      onStart: command.config.role
+    };
+  } else if (typeof command.config.role === "object" && !Array.isArray(command.config.role)) {
+    if (!command.config.role.onStart)
+      command.config.role.onStart = 0;
+    roleConfig = command.config.role;
+  } else {
+    roleConfig = { onStart: 0 };
+  }
 
-	if (isGroup)
-		roleConfig.onStart = threadData.data.setRole?.[commandName] ?? roleConfig.onStart;
+  if (isGroup)
+    roleConfig.onStart = threadData.data.setRole?.[commandName] ?? roleConfig.onStart;
 
-	for (const key of ["onChat", "onStart", "onReaction", "onReply"]) {
-		if (roleConfig[key] == undefined)
-			roleConfig[key] = roleConfig.onStart;
-	}
+  for (const key of ["onChat", "onStart", "onReaction", "onReply"]) {
+    if (roleConfig[key] === undefined)
+      roleConfig[key] = roleConfig.onStart;
+  }
 
-	return roleConfig;
-	// {
-	// 	onChat,
-	// 	onStart,
-	// 	onReaction,
-	// 	onReply
-	// }
+  return roleConfig;
+  // Returns an object with onChat, onStart, onReaction, onReply roles.
 }
 
 function isBannedOrOnlyAdmin(userData, threadData, senderID, threadID, isGroup, commandName, message, lang) {
-	const config = global.GoatBot.config;
-	const { adminBot, hideNotiMessage } = config;
+  const config = global.GoatBot.config;
+  const { adminBot, hideNotiMessage, ownerOnly, ownerBot } = config;
 
-	// check if user banned
-	const infoBannedUser = userData.banned;
-	if (infoBannedUser.status == true) {
-		const { reason, date } = infoBannedUser;
-		if (hideNotiMessage.userBanned == false)
-			message.reply(getText("userBanned", reason, date, senderID, lang));
-		return true;
-	}
+  // Check if the user is banned.
+  const infoBannedUser = userData.banned;
+  if (infoBannedUser.status === true) {
+    const { reason, date } = infoBannedUser;
+    if (hideNotiMessage.userBanned === false)
+      message.reply(getText("userBanned", reason, date, senderID, lang));
+    return true;
+  }
+  
+  // Owner-only check: when enabled, silently ignore messages from non-owners.
+  if (ownerOnly.enable === true && !ownerBot.includes(senderID)) {
+    return true;
+  }
 
-	// check if only admin bot
-	if (
-		config.adminOnly.enable == true
-		&& !adminBot.includes(senderID)
-		&& !config.adminOnly.ignoreCommand.includes(commandName)
-	) {
-		if (hideNotiMessage.adminOnly == false)
-			message.reply(getText("onlyAdminBot", null, null, null, lang));
-		return true;
-	}
+  // Check if only admin bot mode is active.
+  if (
+    config.adminOnly.enable === true &&
+    !adminBot.includes(senderID) &&
+    !config.adminOnly.ignoreCommand.includes(commandName)
+  ) {
+    if (hideNotiMessage.adminOnly === false)
+      message.reply(getText("onlyAdminBot", null, null, null, lang));
+    return true;
+  }
 
-	// ==========    Check Thread    ========== //
-	if (isGroup == true) {
-		if (
-			threadData.data.onlyAdminBox === true
-			&& !threadData.adminIDs.includes(senderID)
-			&& !(threadData.data.ignoreCommanToOnlyAdminBox || []).includes(commandName)
-		) {
-			// check if only admin box
-			if (!threadData.data.hideNotiMessageOnlyAdminBox)
-				message.reply(getText("onlyAdminBox", null, null, null, lang));
-			return true;
-		}
+  // ========== Thread Checks ==========
+  if (isGroup === true) {
+    if (
+      threadData.data.onlyAdminBox === true &&
+      !threadData.adminIDs.includes(senderID) &&
+      !(threadData.data.ignoreCommanToOnlyAdminBox || []).includes(commandName)
+    ) {
+      // If the thread is set to allow only admin users.
+      if (!threadData.data.hideNotiMessageOnlyAdminBox)
+        message.reply(getText("onlyAdminBox", null, null, null, lang));
+      return true;
+    }
 
-		// check if thread banned
-		const infoBannedThread = threadData.banned;
-		if (infoBannedThread.status == true) {
-			const { reason, date } = infoBannedThread;
-			if (hideNotiMessage.threadBanned == false)
-				message.reply(getText("threadBanned", reason, date, threadID, lang));
-			return true;
-		}
-	}
-	return false;
+    // Check if the thread is banned.
+    const infoBannedThread = threadData.banned;
+    if (infoBannedThread.status === true) {
+      const { reason, date } = infoBannedThread;
+      if (hideNotiMessage.threadBanned === false)
+        message.reply(getText("threadBanned", reason, date, threadID, lang));
+      return true;
+    }
+  }
+  return false;
 }
 
 
