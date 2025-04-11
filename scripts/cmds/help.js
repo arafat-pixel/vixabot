@@ -105,23 +105,23 @@ module.exports = {
       await message.reply(msg);
 
     // If the user wants owner commands: /help o or /help owner
-    } } else if (args[0].toLowerCase() === "o" || args[0].toLowerCase() === "owner") {
-  const ownerCommands = Array.from(commands.values())
-    .filter((cmd) => cmd.config.role === 2 || cmd.config.role === 3)
-    .map((cmd) => cmd.config.name)
-    .sort((a, b) => a.localeCompare(b));
+    } else if (args[0].toLowerCase() === "o" || args[0].toLowerCase() === "owner") {
+      const ownerCommands = Array.from(commands.values())
+        .filter((cmd) => cmd.config.role === 2 || cmd.config.role === 3)
+        .map((cmd) => cmd.config.name)
+        .sort((a, b) => a.localeCompare(b));
 
-  let msg = "";
-  msg += `❤️‍🔥𝗢𝘄𝗻𝗲𝗿 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀\n`;
-  if (ownerCommands.length > 0) {
-    ownerCommands.forEach((cmdName) => {
-      msg += `\n💢- ${cmdName}`;
-    });
-  } else {
-    msg += `\nNo owner commands available.`;
-  }
-  msg += `\n\n𝗧𝘆𝗽𝗲 ${prefix}help 𝗖𝗼𝗺𝗺𝗮𝗻𝗱 𝗻𝗮𝗺𝗲 𝘁𝗼 𝘃𝗶𝗲𝘄 𝘂𝘀𝗮𝗴𝗲`;
-  await message.reply({ body: msg });
+      let msg = "";
+      msg += `❤️‍🔥𝗢𝘄𝗻𝗲𝗿 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀\n`;
+      if (ownerCommands.length > 0) {
+        ownerCommands.forEach((cmdName) => {
+          msg += `\n💢- ${cmdName}`;
+        });
+      } else {
+        msg += `\nNo owner commands available.`;
+      }
+      msg += `\n\n𝗧𝘆𝗽𝗲 ${prefix}help 𝗖𝗼𝗺𝗺𝗮𝗻𝗱 𝗻𝗮𝗺𝗲 𝘁𝗼 𝘃𝗶𝗲𝘄 𝘂𝘀𝗮𝗴𝗲`;
+      await message.reply({ body: msg });
 
     // Otherwise, assume the argument is a command name and show its details.
     } else {
@@ -142,14 +142,14 @@ module.exports = {
         const guideBody = configCommand.guide?.en || "No guide available.";
         const usage = guideBody.replace(/{p}/g, prefix).replace(/{n}/g, configCommand.name);
 
-const response =
-  `𝗡𝗮𝗺𝗲 : ${configCommand.name}${configCommand.aliases && configCommand.aliases.length > 0 ? ', ' + configCommand.aliases.join(", ") : ''}\n` +
-  `𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻 : ${longDescription}\n` +
-  `𝗨𝘀𝗮𝗴𝗲 : ${usage}\n` +
-  `𝗥𝗼𝗹𝗲 : ${roleText}\n` +
-  `𝗧𝗶𝗺𝗲 𝗽𝗲𝗿 𝘀𝗲𝗰𝗼𝗻𝗱 : ${configCommand.countDown || 1}s\n` +
-  `𝗩𝗲𝗿𝘀𝗶𝗼𝗻 : ${configCommand.version || "1.0"}\n` +
-  `𝗔𝘂𝘁𝗵𝗼𝗿 : ${author}`;
+        const response =
+          `✪ 𝗡𝗮𝗺𝗲 : ${configCommand.name}${configCommand.aliases && configCommand.aliases.length > 0 ? ', ' + configCommand.aliases.join(", ") : ''}\n` +
+          `✪ 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻 : ${longDescription}\n` +
+          `✪ 𝗥𝗼𝗹𝗲 : ${roleText}\n` +
+          `✪ 𝗧𝗶𝗺𝗲 𝗽𝗲𝗿 𝘀𝗲𝗰𝗼𝗻𝗱 : ${configCommand.countDown || 1}s\n` +
+          `✪ 𝗩𝗲𝗿𝘀𝗶𝗼𝗻 : ${configCommand.version || "1.0"}\n` +
+         `✪ 𝗔𝘂𝘁𝗵𝗼𝗿 : ${author}`+
+          `✪ 𝗨𝘀𝗮𝗴𝗲 : ${usage}\n`;
         await message.reply(response);
       }
     }
@@ -164,6 +164,8 @@ function roleTextToString(roleValue) {
       return "1 (Group administrators)";
     case 2:
       return "2 (Admin bot)";
+    case 3:
+      return "3 (Admin bot additional)";
     default:
       return "Unknown role";
   }
