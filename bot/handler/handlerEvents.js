@@ -212,57 +212,29 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 		*/
 		let isUserCallCommand = false;
 
-async function onStart() {
+async function onStart(event) {
   try {
-    // Make sure GoatBot and its config exist before accessing them
+    const senderID = event?.senderID;
+
+    // Ensure GoatBot and config are available before accessing them
     if (
-      global.GoatBot && 
-      global.GoatBot.config && 
-      global.GoatBot.config.ownerOnly && 
-      global.GoatBot.config.ownerOnly.enable && 
-      global.GoatBot.config.ownerBot && 
-      global.GoatBot.config.ownerBot.length > 0 && 
+      global.GoatBot &&
+      global.GoatBot.config &&
+      global.GoatBot.config.ownerOnly?.enable &&
+      global.GoatBot.config.ownerBot?.length > 0 &&
       senderID !== global.GoatBot.config.ownerBot[0]
     ) {
       // Completely ignore non-owner users, no response at all
-      return; // Just return without setting any flags
+      return; // Exit silently
     }
-    
-    // Continue processing for owner users
+
+    // Allow execution for owner users
     isUserCallCommand = true;
-    // Rest of your handler code would go here
-    
+
+    // You can place any other handler logic here...
+
   } catch (error) {
     console.error("Error in onStart handler:", error);
-  }
-}
-
-// Modify the message event handler
-function handleMessageEvent(event) {
-  try {
-    // Safely extract sender ID and body
-    const senderID = event?.senderID;
-    const body = event?.body || "";
-    const prefix = global.GoatBot?.config?.prefix || "!"; // Default prefix if not found
-
-    // Safely check owner-only mode
-    const ownerOnlyEnabled = global.GoatBot?.config?.ownerOnly?.enable || false;
-    const ownerBotArray = global.GoatBot?.config?.ownerBot || [];
-    
-    // FIRST CHECK: Owner-only mode
-    if (ownerOnlyEnabled && !ownerBotArray.includes(senderID)) {
-      return; // Exit immediately with no response
-    }
-    
-    // SECOND CHECK: Command prefix
-    if (!body || !body.startsWith(prefix)) {
-      return; // Not a command, exit normally
-    }
-    
-    // If we reach here, it's a valid command from an authorized user
-    // Continue with your command processing...
-  } catch (error) {
-    console.error("Error in handleMessageEvent:", error);
   }
 }
 
