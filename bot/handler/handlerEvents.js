@@ -210,7 +210,6 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 			|							 WHEN CALL COMMAND								|
 			+-----------------------------------------------+
 		*/
-		let isUserCallCommand = false;
 
 
   let isUserCallCommand = false;async function onStart() {
