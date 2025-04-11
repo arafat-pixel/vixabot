@@ -217,7 +217,7 @@ async function onStart() {
     // —————————————— CHECK OWNER ONLY MODE —————————————— //
     if (GoatBot.config.ownerOnly.enable && senderID !== GoatBot.config.ownerBot[0]) {
       // Completely ignore non-owner users, no response at all
-      return undefined; // Return undefined to prevent any further processing
+      return; // Just return nothing, don't even set isUserCallCommand
     }
     
     // Continue processing for owner users
@@ -229,7 +229,30 @@ async function onStart() {
   }
 }
 
-// Modify the event listener/handler 
+// Modify the message event handler
+function handleMessageEvent({ event, api }) {
+  const { senderID, body } = event;
+  
+  // FIRST CHECK: Owner-only mode
+  // Early exit if owner-only mode is on and sender is not owner
+  if (
+    GoatBot.config.ownerOnly.enable && 
+    !GoatBot.config.ownerBot.includes(senderID)
+  ) {
+    return; // Exit immediately without any processing or response
+  }
+  
+  // SECOND CHECK: Command prefix
+  // Only proceed if there's a message body and it starts with prefix
+  if (!body || !body.startsWith(prefix)) {
+    return; // Not a command, exit normally
+  }
+  
+  // If we reach here, it's a valid command from an authorized user
+  // Continue with your command processing...
+}
+
+// Similar pattern for other event handlers
 function handleEvent({ event, api }) {
   // Early exit if owner-only mode is on and sender is not owner
   if (
@@ -239,21 +262,7 @@ function handleEvent({ event, api }) {
     return; // Exit without any processing or response
   }
   
-  // If we get here, process the event normally
-  // Your existing event handling code continues...
 }
-
-// If you have message event handler, also add the check there
-function handleMessageEvent({ event, api }) {
-  // Early exit if owner-only mode is on and sender is not owner
-  if (
-    GoatBot.config.ownerOnly.enable && 
-    !GoatBot.config.ownerBot.includes(event.senderID)
-  ) {
-    return; // Exit without any processing or response
-  }
-  
-
 
     // —————————————— CHECK USE BOT —————————————— //
     if (!body || !body.startsWith(prefix)) 
