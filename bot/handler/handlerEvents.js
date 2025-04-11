@@ -210,15 +210,49 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 			|							 WHEN CALL COMMAND								|
 			+-----------------------------------------------+
 		*/
-		let isUserCallCommand = false;async function onStart() {
+		let isUserCallCommand = false;
+
+async function onStart() {
   try {
-  // —————————————— CHECK OWNER ONLY MODE —————————————— //
-  if (GoatBot.config.ownerOnly.enable && senderID !== GoatBot.config.ownerBot[0]) {
-    // Skip reply, silently ignore
-    return; // Standardized return for failure
+    // —————————————— CHECK OWNER ONLY MODE —————————————— //
+    if (GoatBot.config.ownerOnly.enable && senderID !== GoatBot.config.ownerBot[0]) {
+      // Completely ignore non-owner users, no response at all
+      return undefined; // Return undefined to prevent any further processing
+    }
+    
+    // Continue processing for owner users
+    isUserCallCommand = true;
+    // Rest of your handler code would go here
+    
+  } catch (error) {
+    console.error("Error in onStart handler:", error);
   }
+}
 
+// Modify the event listener/handler 
+function handleEvent({ event, api }) {
+  // Early exit if owner-only mode is on and sender is not owner
+  if (
+    GoatBot.config.ownerOnly.enable && 
+    !GoatBot.config.ownerBot.includes(event.senderID)
+  ) {
+    return; // Exit without any processing or response
+  }
+  
+  // If we get here, process the event normally
+  // Your existing event handling code continues...
+}
 
+// If you have message event handler, also add the check there
+function handleMessageEvent({ event, api }) {
+  // Early exit if owner-only mode is on and sender is not owner
+  if (
+    GoatBot.config.ownerOnly.enable && 
+    !GoatBot.config.ownerBot.includes(event.senderID)
+  ) {
+    return; // Exit without any processing or response
+  }
+  
 
 
     // —————————————— CHECK USE BOT —————————————— //
