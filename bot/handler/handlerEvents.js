@@ -212,13 +212,11 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 		*/
 		let isUserCallCommand = false;async function onStart() {
   try {
-    // —————————————— CHECK OWNER ONLY MODE —————————————— //
-    if (GoatBot.config.ownerOnly.enable && senderID !== GoatBot.config.ownerBot[0]) {
-      if (!GoatBot.config.hideNotiMessage?.ownerOnly) {
-        await message.reply("Only the bot owner can use the bot right now.");
-      }
-      return false; // Standardized return for failure
-    }
+  // —————————————— CHECK OWNER ONLY MODE —————————————— //
+  if (GoatBot.config.ownerOnly.enable && senderID !== GoatBot.config.ownerBot[0]) {
+    // Skip reply, silently ignore
+    return false; // Standardized return for failure
+  }
 
 
 
