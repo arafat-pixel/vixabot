@@ -215,7 +215,7 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
   // —————————————— CHECK OWNER ONLY MODE —————————————— //
   if (GoatBot.config.ownerOnly.enable && senderID !== GoatBot.config.ownerBot[0]) {
     // Skip reply, silently ignore
-    return false; // Standardized return for failure
+    return; // Standardized return for failure
   }
 
 
