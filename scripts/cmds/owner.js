@@ -1,51 +1,67 @@
-const { GoatWrapper } = require('fca-liane-utils');
-const axios = require('axios');
+const fs = require("fs-extra");
+const { config } = global.GoatBot;
+const { client } = global;
 
 module.exports = {
-	config: {
-		name: "owner",
-		author: "ShAn",
-		role: 0,
-		shortDescription: " ",
-		longDescription: "",
-		category: "𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗧𝗜𝗢𝗡",
-		guide: "{pn}"
-	},
+  config: {
+    name: "owneronly",
+    aliases: ["owonly", "onlyow", "onlyowner"],
+    version: "1.0",
+    author: "Nur",
+    countDown: 5,
+    role: 2,
+    description: {
+      en: "turn on/off only owner can use bot"
+    },
+    category: "BOT MANAGEMENT",
+    guide: {
+      en: "   {pn} [on | off]: turn on/off the mode only owner can use bot"  
+          + "\n   {pn} noti [on | off]: turn on/off the notification when user is not owner use bot"  
+    }
+  },
 
-	onStart: async function ({ api, event }) {
-		try {
-			const shaninfo = {
-				name: '𝗡𝘂𝗿 𝗛𝗮𝗺𝗶𝗺 𝗕𝗮𝗱𝗵𝗼𝗻',
-				age: '𝟭𝟵+',
-				birthday: '𝟭𝟵𝘁𝗵 𝗔𝘂𝗴𝘂𝘀𝘁, 𝟮𝟬𝟬𝟱',
-				facebook: 'https://www.facebook.com/Badhon2k23',
-				instagram: 'https://www.instagram.com/nurhamimbadhon',
-				religion: '𝗜𝘀𝗹𝗮𝗺'
-			};
+  langs: {
+    en: {  
+      turnedOn: "Turned on the mode only owner can use bot",  
+      turnedOff: "Turned off the mode only owner can use bot",  
+      turnedOnNoti: "Turned on the notification when user is not owner use bot",  
+      turnedOffNoti: "Turned off the notification when user is not owner use bot"  
+    }
+  },
 
-			const response = `
-🔥 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗧𝗜𝗢𝗡..!
+  onStart: function ({ args, message, getLang, event }) {
+    // Since this is the owner-only command itself, we allow it to be accessed only by owners
+    // regardless of the current setting
+    if (!GoatBot.config.ownerBot.includes(event.senderID)) {
+      // Silent ignore for non-owners
+      return;
+    }
+    
+    let isSetNoti = false;
+    let value;
+    let indexGetVal = 0;
 
-❖ 𝗡𝗔𝗠𝗘 ➪ ${shaninfo.name}
-❖ 𝗔𝗚𝗘 ➪ ${shaninfo.age}
-❖ 𝗗𝗔𝗧𝗘 𝗢𝗙 𝗕𝗜𝗥𝗧𝗛 ➪ ${shaninfo.birthday}
-❖ 𝗙𝗔𝗖𝗘𝗕𝗢𝗢𝗞 ➪ ${shaninfo.facebook}
-❖ 𝗜𝗡𝗦𝗧𝗔𝗚𝗥𝗔𝗠 ➪ ${shaninfo.instagram}
-❖ 𝗥𝗘𝗟𝗜𝗚𝗜𝗢𝗡 ➪ ${shaninfo.religion}
+    if (args[0] == "noti") {  
+      isSetNoti = true;  
+      indexGetVal = 1;  
+    }  
 
-✦ `;
+    if (args[indexGetVal] == "on")  
+      value = true;  
+    else if (args[indexGetVal] == "off")  
+      value = false;  
+    else  
+      return message.SyntaxError();  
 
-			await api.sendMessage({
-				body: response
-			}, event.threadID, event.messageID);
+    if (isSetNoti) {  
+      config.hideNotiMessage.ownerOnly = !value;  
+      message.reply(getLang(value ? "turnedOnNoti" : "turnedOffNoti"));  
+    }  
+    else {  
+      config.ownerOnly.enable = value;  
+      message.reply(getLang(value ? "turnedOn" : "turnedOff"));  
+    }  
 
-			api.setMessageReaction('💖', event.messageID, (err) => {}, true);
-		} catch (error) {
-			console.error('Error in owner command:', error);
-			return api.sendMessage('An error occurred while processing the command.', event.threadID);
-		}
-	}
+    fs.writeFileSync(client.dirConfig, JSON.stringify(config, null, 2));
+  }
 };
-
-const wrapper = new GoatWrapper(module.exports);
-wrapper.applyNoPrefix({ allowPrefix: true });
