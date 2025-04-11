@@ -105,23 +105,23 @@ module.exports = {
       await message.reply(msg);
 
     // If the user wants owner commands: /help o or /help owner
-    } else if (args[0].toLowerCase() === "o" || args[0].toLowerCase() === "owner") {
-      const ownerCommands = Array.from(commands.values())
-        .filter((cmd) => cmd.config.role === 2)
-        .map((cmd) => cmd.config.name)
-        .sort((a, b) => a.localeCompare(b));
+    } } else if (args[0].toLowerCase() === "o" || args[0].toLowerCase() === "owner") {
+  const ownerCommands = Array.from(commands.values())
+    .filter((cmd) => cmd.config.role === 2 || cmd.config.role === 3)
+    .map((cmd) => cmd.config.name)
+    .sort((a, b) => a.localeCompare(b));
 
-      let msg = "";
-      msg += `❤️‍🔥𝗢𝘄𝗻𝗲𝗿 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀\n`;
-      if (ownerCommands.length > 0) {
-        ownerCommands.forEach((cmdName) => {
-          msg += `\n💢- ${cmdName}`;
-        });
-      } else {
-        msg += `\nNo owner commands available.`;
-      }
-      msg += `\n\n𝗧𝘆𝗽𝗲 ${prefix}help 𝗖𝗼𝗺𝗺𝗮𝗻𝗱 𝗻𝗮𝗺𝗲 𝘁𝗼 𝘃𝗶𝗲𝘄 𝘂𝘀𝗮𝗴𝗲`;
-      await message.reply({ body: msg });
+  let msg = "";
+  msg += `❤️‍🔥𝗢𝘄𝗻𝗲𝗿 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀\n`;
+  if (ownerCommands.length > 0) {
+    ownerCommands.forEach((cmdName) => {
+      msg += `\n💢- ${cmdName}`;
+    });
+  } else {
+    msg += `\nNo owner commands available.`;
+  }
+  msg += `\n\n𝗧𝘆𝗽𝗲 ${prefix}help 𝗖𝗼𝗺𝗺𝗮𝗻𝗱 𝗻𝗮𝗺𝗲 𝘁𝗼 𝘃𝗶𝗲𝘄 𝘂𝘀𝗮𝗴𝗲`;
+  await message.reply({ body: msg });
 
     // Otherwise, assume the argument is a command name and show its details.
     } else {
