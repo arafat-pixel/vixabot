@@ -56,12 +56,12 @@ module.exports = {
 				msg = getLang("kicked", authorName, author, threadName, threadID, time);
 			}
 
-			// Send notification to all admins
-			for (const adminID of config.adminBot)
-				await api.sendMessage(msg, adminID);
-		}
-		catch (err) {
-			console.error("Error in logsbot:", err);
-		}
-	}
-};
+    // Owner-দের কাছে মেসেজ পাঠানোর জন্য
+    for (const ownerID of config.ownerBot) {
+        await api.sendMessage(msg, ownerID);
+    }
+    // নির্দিষ্ট গ্রুপে মেসেজ পাঠানো জন্য
+    await api.sendMessage(msg, "8724817120954173");
+} catch (err) {
+    console.error("Error in logsbot:", err);
+}
