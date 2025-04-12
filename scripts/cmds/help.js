@@ -148,8 +148,8 @@ module.exports = {
           `✪ 𝗥𝗼𝗹𝗲 : ${roleText}\n` +
           `✪ 𝗧𝗶𝗺𝗲 𝗽𝗲𝗿 𝘀𝗲𝗰𝗼𝗻𝗱 : ${configCommand.countDown || 1}s\n` +
           `✪ 𝗩𝗲𝗿𝘀𝗶𝗼𝗻 : ${configCommand.version || "1.0"}\n` +
-         `✪ 𝗔𝘂𝘁𝗵𝗼𝗿 : ${author}`+
-          `✪ 𝗨𝘀𝗮𝗴𝗲 : ${usage}\n`;
+         `✪ 𝗔𝘂𝘁𝗵𝗼𝗿 : ${author}\n`+
+          `✪ 𝗨𝘀𝗮𝗴𝗲 : ${usage}`;
         await message.reply(response);
       }
     }
