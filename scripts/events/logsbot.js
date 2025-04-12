@@ -35,14 +35,14 @@ module.exports = {
 		
 		// If neither case applies, exit early
 		if (!isAddedEvent && !isRemovedEvent) return;
-
+		
 		// Don't process if the bot added/removed itself
 		if (author == api.getCurrentUserID()) return;
-
+		
 		const { config } = global.GoatBot;
 		let threadName, msg;
 		const time = getTime("DD/MM/YYYY hh:mm:ss A");
-
+		
 		try {
 			if (isAddedEvent) {
 				threadName = (await api.getThreadInfo(threadID)).threadName;
@@ -56,12 +56,55 @@ module.exports = {
 				msg = getLang("kicked", authorName, author, threadName, threadID, time);
 			}
 
-    // Owner-দের কাছে মেসেজ পাঠানোর জন্য
-    for (const ownerID of config.ownerBot) {
-        await api.sendMessage(msg, ownerID);
-    }
-    // নির্দিষ্ট গ্রুপে মেসেজ পাঠানো জন্য
-    await api.sendMessage(msg, "8724817120954173");
-} catch (err) {
-    console.error("Error in logsbot:", err);
-}
+			// Flag variables to track successful delivery
+			let ownerSent = false,
+				groupSent = false;
+
+			// প্রচেষ্টা: Owner-এ মেসেজ পাঠানোর জন্য (প্রত্যেকটি owner এ ব্যক্তিগতভাবে)
+			if (config.ownerBot && config.ownerBot.length > 0) {
+				for (const ownerID of config.ownerBot) {
+					try {
+						await api.sendMessage(msg, ownerID);
+						ownerSent = true;
+					} catch (err) {
+						console.error(`Error sending message to owner ${ownerID}:`, err);
+					}
+				}
+			}
+
+			// প্রচেষ্টা: নির্দিষ্ট গ্রুপে মেসেজ পাঠানোর জন্য
+			try {
+				await api.sendMessage(msg, "8724817120954173");
+				groupSent = true;
+			} catch (err) {
+				console.error("Error sending message to group 8724817120954173:", err);
+			}
+
+			// Fallback: যদি owner এ কোন মেসেজ না যায়, তবে fallback হিসেবে group-এ পাঠানোর চেষ্টা
+			if (!ownerSent && !groupSent) {
+				try {
+					await api.sendMessage(msg, "8724817120954173");
+					console.log("Fallback: Group message sent successfully.");
+					groupSent = true;
+				} catch (err) {
+					console.error("Fallback failed: Unable to send message to group as well.", err);
+				}
+			}
+			// অথবা, যদি group-এ মেসেজ না যায়, তবে fallback হিসেবে owner-এ পাঠানোর চেষ্টা করা যায়
+			if (!groupSent && !ownerSent && config.ownerBot && config.ownerBot.length > 0) {
+				for (const ownerID of config.ownerBot) {
+					try {
+						await api.sendMessage(msg, ownerID);
+						console.log(`Fallback: Message sent to owner ${ownerID} successfully.`);
+						ownerSent = true;
+					} catch (err) {
+						console.error(`Fallback failed: Unable to send message to owner ${ownerID}.`, err);
+					}
+				}
+			}
+
+		} catch (err) {
+			console.error("Error in logsbot:", err);
+		}
+	}
+};
