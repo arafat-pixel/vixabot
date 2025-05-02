@@ -5,41 +5,63 @@ const { client } = global;
 module.exports = {
   config: {
     name: "owneronly",
-    aliases: ["ownly", "onlyowner"],
+    aliases: ["owonly", "onlyow", "onlyowner"],
     version: "1.0",
-    author: "YourName", // Replace with your actual name if desired
+    author: "Nur",
     countDown: 5,
-    role: 3, // You can adjust the role level as needed
+    role: 2,
     description: {
-      
-      en: "Turn on/off the mode only owner can use bot"
+      en: "turn on/off only owner can use bot"
     },
-    category: "𝗕𝗢𝗧 𝗠𝗔𝗡𝗔𝗚𝗘𝗠𝗘𝗡𝗧",
+    category: "BOT MANAGEMENT",
     guide: {
-   
-      en: "   {pn} [on | off]: turn on/off the mode only owner can use bot"
+      en: "   {pn} [on | off]: turn on/off the mode only owner can use bot"  
+          + "\n   {pn} noti [on | off]: turn on/off the notification when user is not owner use bot"  
     }
   },
 
   langs: {
-    
-    en: {
-      turnedOn: "Turned on the mode only owner can use bot",
-      turnedOff: "Turned off the mode only owner can use bot"
+    en: {  
+      turnedOn: "Turned on the mode only owner can use bot",  
+      turnedOff: "Turned off the mode only owner can use bot",  
+      turnedOnNoti: "Turned on the notification when user is not owner use bot",  
+      turnedOffNoti: "Turned off the notification when user is not owner use bot"  
     }
   },
 
-  onStart: function ({ args, message, getLang }) {
+  onStart: function ({ args, message, getLang, event }) {
+    // Since this is the owner-only command itself, we allow it to be accessed only by owners
+    // regardless of the current setting
+    if (!GoatBot.config.ownerBot.includes(event.senderID)) {
+      // Silent ignore for non-owners
+      return;
+    }
+    
+    let isSetNoti = false;
     let value;
-    if (args[0] === "on") value = true;
-    else if (args[0] === "off") value = false;
-    else return message.SyntaxError();
+    let indexGetVal = 0;
 
-    // Toggle the owner-only mode in the configuration.
-    config.ownerOnly.enable = value;
-    message.reply(getLang(value ? "turnedOn" : "turnedOff"));
+    if (args[0] == "noti") {  
+      isSetNoti = true;  
+      indexGetVal = 1;  
+    }  
 
-    // Save the updated configuration
+    if (args[indexGetVal] == "on")  
+      value = true;  
+    else if (args[indexGetVal] == "off")  
+      value = false;  
+    else  
+      return message.SyntaxError();  
+
+    if (isSetNoti) {  
+      config.hideNotiMessage.ownerOnly = !value;  
+      message.reply(getLang(value ? "turnedOnNoti" : "turnedOffNoti"));  
+    }  
+    else {  
+      config.ownerOnly.enable = value;  
+      message.reply(getLang(value ? "turnedOn" : "turnedOff"));  
+    }  
+
     fs.writeFileSync(client.dirConfig, JSON.stringify(config, null, 2));
   }
 };
