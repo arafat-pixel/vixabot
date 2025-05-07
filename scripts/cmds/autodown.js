@@ -1,7 +1,9 @@
 const axios = require("axios");
 
 const dApi = async () => {
-  const base = await axios.get("https://raw.githubusercontent.com/nazrul4x/Noobs/main/Apis.json");
+  const base = await axios.get(
+    "https://raw.githubusercontent.com/EwrShAn25/ShAn.s-Api/refs/heads/main/Api.json"
+  );
   return base.data.alldl;
 };
 
