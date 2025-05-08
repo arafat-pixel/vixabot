@@ -89,7 +89,7 @@
 	"autoReloginWhenChangeAccount": false,
 	"autoRestartWhenListenMqttError": false,
 	"restartListenMqtt": {
-		"enable": true,
+		"enable": false,
 		"timeRestart": 3600000,
 		"delayAfterStopListening": 2000,
 		"logNoti": true,
@@ -143,7 +143,7 @@
 		"selfListen": false,
 		"selfListenEvent": true,
 		"autoMarkDelivery": false,
-		"autoReconnect": false,
+		"autoReconnect": true,
 		"notes": "Document here: https://github.com/ntkhang03/fb-chat-api/blob/master/DOCS.md#apisetoptionsoptions "
 	}
 }
