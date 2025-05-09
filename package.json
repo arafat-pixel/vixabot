@@ -8,6 +8,7 @@
 		"npm": ">=10.0.0"
 	},
 	"dependencies": {
+		"mime-types": "^2.1.35",
 		"@distube/ytdl-core": "^4.13.3",
 		"axios": "^1.4.0",
 		"bcrypt": "^5.0.1",
