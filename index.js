@@ -17,8 +17,21 @@
  * Cảm ơn bạn đã sử dụng
  */
 
+const express = require("express");
 const { spawn } = require("child_process");
-const log = require("./logger/log.js");
+const log = console; // logger/log.js যদি না থাকে
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+  res.send("Nur Hamim Badhon Bot is Running!");
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  startProject();
+});
 
 function startProject() {
 	const child = spawn("node", ["Goat.js"], {
@@ -34,5 +47,3 @@ function startProject() {
 		}
 	});
 }
-
-startProject();
