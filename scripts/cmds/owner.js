@@ -17,9 +17,9 @@ module.exports = {
 			const shaninfo = {
 				name: '𝗡𝘂𝗿 𝗛𝗮𝗺𝗶𝗺 𝗕𝗮𝗱𝗵𝗼𝗻',
 				age: '𝟭𝟵+',
-				birthday: '𝟭𝟵𝘁𝗵 𝗔𝘂𝗴𝘂𝘀𝘁, 𝟮𝟬𝟬𝟱',
-				facebook: 'https://www.facebook.com/Badhon2k23',
-				instagram: 'https://www.instagram.com/nurhamimbadhon',
+				birthday: '',
+				facebook: '',
+				instagram: '',
 				religion: '𝗜𝘀𝗹𝗮𝗺'
 			};
 
