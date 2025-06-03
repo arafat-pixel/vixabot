@@ -5,7 +5,7 @@ module.exports = {
   config: {
     name: "join",
     version: "2.7",
-    author: "𝗦𝗵𝗔𝗻",
+    author: "Nur",
     countDown: 5,
     role: 2,
     shortDescription: "Join/leave groups with pagination",
