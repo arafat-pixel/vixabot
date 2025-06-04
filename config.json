@@ -44,10 +44,10 @@
 	"timeZone": "Asia/Ho_Chi_Minh",
 	"credentials": {
 		"gmailAccount": {
-			"email": "sirana5097@gmail.com",
-			"clientId": "255361029474-23gsoq2mk3917srj7teaot6o3jklkag0.apps.googleusercontent.com",
-			"clientSecret": "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",
-			"refreshToken": "1//04O6kUtOm2wNwCgYIARAAGAQSNwF-L9IrHXORnT_e2whzec4yI03M0hJjrAlkxERTas_i_QfHGPql5u3yumOXHv6keVjPcVAmzII",
+			"email": "",
+			"clientId": "",
+			"clientSecret": "",
+			"refreshToken": "",
 			"apiKey": ""
 		},
 		"gRecaptcha": {
@@ -87,9 +87,9 @@
 	},
 	"autoRefreshFbstate": true,
 	"autoReloginWhenChangeAccount": false,
-	"autoRestartWhenListenMqttError": false,
+	"autoRestartWhenListenMqttError": true,
 	"restartListenMqtt": {
-		"enable": false,
+		"enable": true,
 		"timeRestart": 3600000,
 		"delayAfterStopListening": 2000,
 		"logNoti": true,
