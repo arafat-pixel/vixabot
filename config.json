@@ -44,9 +44,9 @@
 	"timeZone": "Asia/Ho_Chi_Minh",
 	"credentials": {
 		"gmailAccount": {
-			"email": "",
-			"clientId": "",
-			"clientSecret": "",
+			"email": "nurhamimbadhon@gmail.com",
+			"clientId": "421498426776-ai4hn5ueb8pd5gvj3innj9nof1lmf6no.apps.googleusercontent.com",
+			"clientSecret": "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",
 			"refreshToken": "",
 			"apiKey": ""
 		},
