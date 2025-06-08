@@ -36,7 +36,7 @@
 	},
 	"database": {
 		"type": "mongodb",
-		"uriMongodb" :"mongodb+srv://Abdulalim:Z4avLtm2YICA12A@abdulalim.ttfmec.mongodb.net/bot?retryWrites=true&w=majority&appName=Abdulalim",
+		"uriMongodb" :"mongodb+srv://abdulalim:dbpassword21@cluster0.co2k47n.mongodb.net/bot-v2?retryWrites=true&w=majority&appName=Cluster0",
 		"uriMongod": "mongodb+srv://sirana5098:shan252@cluster0.afe4f.mongodb.net/unknown-v2?retryWrites=true&w=majority&appName=Cluster0",
 		"autoSyncWhenStart": false,
 		"autoRefreshThreadInfoFirstTime": true,
